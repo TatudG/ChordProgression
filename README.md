@@ -79,7 +79,7 @@ der übliche Zwischendominant.
 `B♭` nennen, und das englische `B` heißt `H`. Der Umschalter gilt für Anzeige
 *und* Eingabe: mit aktivem Schalter liefert `B` den Ton B♭ und `H` den Ton B.
 
-**Gitarrengriffe statt Klaviatur** – zeigt jede Karte als Griffbild statt als
+**Gitarrengriffe** – zeigt jede Karte als Griffbild statt als
 Tastatur. Die Klaviatur bleibt die Hauptansicht; ohne den Schalter ändert sich
 nichts. Im Bild ist der Grundton orange, die übrigen Akkordtöne blau, der
 Basston eines Slash-Akkords grün. `○` heißt leere Saite, `×` nicht anschlagen;
