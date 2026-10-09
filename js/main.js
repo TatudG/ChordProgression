@@ -726,6 +726,8 @@
   var SCHWARZE_NACH = [0, 1, 3, 4, 5];        /* schwarze Taste steht nach dieser weißen */
   var SCHWARZER_TON = [1, 3, 6, 8, 10];
   var ANZAHL_WEISS  = 14;                     /* zwei Oktaven zu je sieben Tasten */
+  var TASTEN_UNTEN  = 60;                     /* C4, die tiefste gezeichnete Taste */
+  var TASTEN_OBEN   = TASTEN_UNTEN + 2 * 12 - 1;  /* B5, die höchste */
 
   var T_W = 34;   /* Breite einer weißen Taste */
   var T_H = 116;  /* Höhe der Tastatur */
@@ -743,20 +745,24 @@
      ---------------------------------------------------------------
 
      Der Fingersatz gilt für die rechte Hand: der Daumen ist 1, der kleine
-     Finger 5. Gezeigt wird er nur für die Töne der unteren Oktave – das ist
-     die Lage, in der man die Karte spielt; die blasse Oktave darüber ist nur
-     die Erinnerung, dass derselbe Ton auch eine Oktave höher liegt.
+     Finger 5. Mit ihm zeigt die Tastatur die Lage, in der die Hand liegt:
+     kräftig gezeichnet ist, was gespielt wird, blass derselbe Ton in der
+     anderen Oktave.
 
-     Zwei Regeln entscheiden, welche Zahl auf welcher Taste liegt:
+     Drei Regeln entscheiden, welche Zahl auf welcher Taste liegt:
 
+     - Ein Ton, der schon im Akkord davor lag, behält seinen Finger. Das wiegt
+       am schwersten: benotet wird nicht der einzelne Akkord, sondern die ganze
+       Abfolge (siehe fingersatzFolge), und ein verlorener Ton wiegt einen
+       unbequemen Griff auf.
      - Die Hand soll natürlich liegen. Wie weit zwei Finger auseinander
        liegen, richtet sich nach dem Tonabstand: Halbton und Ganzton einen
        Finger weiter, die Terz zwei, ab der Quinte vier. Aus diesen
        Wunschabständen kommt die Spanne des Griffs; verteilt wird sie nach den
        wirklichen Tonabständen (siehe zielAbstaende).
-     - Ein Ton, der schon im Akkord davor lag, soll seinen Finger behalten.
-       Dafür werden alle möglichen Fingerfolgen durchgerechnet und benotet;
-       ein liegen gebliebener Finger wiegt eine unbequeme Spreizung auf.
+     - Die Hand soll nicht springen. Von zwei gleich guten Lagen gewinnt die,
+       die näher an der vorigen liegt; ohne Vorgabe liegt sie so tief wie
+       möglich – so, wie die Tastatur ohne Fingersatz gezeichnet ist.
 
      Mehr als fünf Töne kann eine Hand nicht auf einmal greifen – solche
      Akkorde bekommen keinen Fingersatz, sondern einen Hinweis. */
@@ -785,18 +791,90 @@
     return folgen;
   }
 
-  /* Die Tasten eines Akkords in der unteren Oktave: jeder Ton genau einmal,
-     von unten nach oben. */
-  function tastenDesAkkords(akkord) {
+  /* Weiter als eine Oktave spannt keine Hand. */
+  var HAND_SPANNE = 12;
+
+  /* Die Töne des Akkords ohne Doppelte, von unten nach oben. */
+  function pcsDesAkkords(akkord) {
     var gesehen = {};
-    var tasten = [];
+    var pcs = [];
     akkord.pcs.forEach(function (pc) {
       if (gesehen[pc]) { return; }
       gesehen[pc] = true;
-      tasten.push(60 + pc);            /* C4 aufwärts */
+      pcs.push(pc);
     });
-    tasten.sort(function (a, b) { return a - b; });
-    return tasten;
+    pcs.sort(function (a, b) { return a - b; });
+    return pcs;
+  }
+
+  /* Die Lagen, in denen eine Hand diesen Akkord greifen kann: jeder Ton kommt
+     einmal vor, und die Töne liegen beieinander. Welcher Ton der tiefste ist,
+     darf sich von Lage zu Lage unterscheiden – dieselben Töne lassen sich
+     verschieden über die Hand verteilen, und genau das braucht es, damit ein
+     gemeinsamer Ton liegen bleiben kann. Die Lage in Grundstellung fängt beim
+     tiefsten gezeichneten Ton an – das ist die Lage, die die Tastatur ohne
+     Fingersatz zeigt (in C-Dur C–E–G, in G-Dur D–G–B, weil das tiefe G unter
+     C4 liegt); die anderen sind Umkehrungen. */
+  function lagenDesAkkords(pcs) {
+    var lagen = [];
+    var r, i, unten, taste, schritt;
+
+    for (r = 0; r < pcs.length; r++) {
+      for (unten = TASTEN_UNTEN; unten <= TASTEN_OBEN; unten++) {
+        if (unten % 12 !== pcs[r]) { continue; }
+        taste = [unten];
+        for (i = 1; i < pcs.length; i++) {
+          schritt = (pcs[(r + i) % pcs.length] -
+                     pcs[(r + i - 1) % pcs.length] + 12) % 12;
+          taste.push(taste[i - 1] + schritt);
+        }
+        if (taste[taste.length - 1] > TASTEN_OBEN) { continue; }
+        if (taste[taste.length - 1] - unten > HAND_SPANNE) { continue; }
+        lagen.push({ taste: taste, grundstellung: r === 0 });
+      }
+    }
+
+    return lagen;
+  }
+
+  /* Alle Arten, diesen Akkord zu greifen: jede Lage mit jeder Fingerfolge
+     darauf. Mehr als fünf Finger hat eine Hand nicht, deshalb bleiben es
+     wenige. */
+  function griffeDesAkkords(pcs) {
+    var griffe = [];
+    /* Eine Umkehrung ist kein Fehler – sie kostet nur ein wenig, damit ein
+       Akkord nicht ohne Grund mit einem anderen Ton im Bass dasteht. Ein
+       liegen gebliebener Finger und eine bequemere Hand wiegen mehr. */
+    var umkehrungsstrafe = 1;
+
+    lagenDesAkkords(pcs).forEach(function (lage) {
+      var ziel = zielAbstaende(lage.taste);
+
+      fingerFolgen(lage.taste.length).forEach(function (folge) {
+        var ton = {};       /* Ton (pc) → Finger */
+        var tasten = {};    /* Taste (MIDI) → Finger */
+        var unbequem = lage.grundstellung ? 0 : umkehrungsstrafe;
+
+        lage.taste.forEach(function (taste, i) {
+          ton[taste % 12] = folge[i];
+          tasten[taste] = folge[i];
+          if (i > 0) {
+            unbequem += Math.abs((folge[i] - folge[i - 1]) - ziel[i - 1]);
+          }
+        });
+
+        griffe.push({
+          ton: ton,
+          tasten: tasten,
+          grundstellung: lage.grundstellung,
+          unbequem: unbequem,
+          mitte: (lage.taste[0] + lage.taste[lage.taste.length - 1]) / 2,
+          tiefste: lage.taste[0]
+        });
+      });
+    });
+
+    return griffe;
   }
 
   /* Wie weit die Finger zwischen den Tönen auseinander liegen sollen: die
@@ -845,46 +923,101 @@
     return weiten.map(function (w) { return w.ziel; });
   }
 
-  /* Welche Taste welchen Finger bekommt. "gemerkt" sind die Finger des
-     Akkords davor; ohne sie liegt die Hand von selbst so tief wie möglich. */
-  function fingersatzFuer(tasten, gemerkt) {
-    var ziel = zielAbstaende(tasten);
-    var beste = null;
-    var besterWert = 0;
+  /* Was ein Wechsel kostet: jeder gemeinsame Ton, der seinen Finger wechselt,
+     zählt schwer – viel schwerer als jeder unbequeme Griff. */
+  var WECHSEL_GEWICHT = 100;
 
-    fingerFolgen(tasten.length).forEach(function (folge) {
-      var wert = 0;
-      tasten.forEach(function (taste, i) {
-        if (i > 0) {
-          wert -= Math.abs((folge[i] - folge[i - 1]) - ziel[i - 1]);
-        }
-        /* Ein liegen gebliebener Finger wiegt eine unbequeme Spreizung auf. */
-        if (gemerkt && gemerkt[taste] === folge[i]) { wert += 3; }
-      });
-      /* Bei gleichem Wert bleibt die zuerst geprüfte Folge – die mit dem
-         tiefsten Daumen. */
-      if (beste === null || wert > besterWert) { beste = folge; besterWert = wert; }
+  function wechselkosten(alt, neu) {
+    var wechsel = 0;
+    Object.keys(neu.ton).forEach(function (pc) {
+      if (alt.ton[pc] !== undefined && alt.ton[pc] !== neu.ton[pc]) {
+        wechsel += 1;
+      }
     });
-
-    var ergebnis = {};
-    tasten.forEach(function (taste, i) { ergebnis[taste] = beste[i]; });
-    return ergebnis;
+    return wechsel * WECHSEL_GEWICHT;
   }
 
-  /* Der Fingersatz über die ganze Abfolge, ein Eintrag je Karte. Was ein
-     Akkord greift, geht als Gedächtnis an den nächsten weiter. Ein Akkord,
-     den eine Hand nicht fassen kann, bekommt keinen – und danach beginnt die
-     Hand wieder von vorn, weil nicht bekannt ist, welche Finger gerade wo
-     liegen. */
+  /* Der Fingersatz über die ganze Abfolge, ein Eintrag je Karte: welche Taste
+     welchen Finger bekommt. Ein Akkord, den eine Hand nicht fassen kann,
+     bekommt keinen – und danach beginnt die Hand wieder von vorn, weil nicht
+     bekannt ist, welche Finger gerade wo liegen.
+
+     Weil ein liegen gebliebener Ton schwerer wiegt als ein bequemer Griff,
+     wird nicht Akkord für Akkord entschieden, sondern die günstigste Kette
+     von Lagen durchgerechnet: je Akkord gibt es nur ein paar dutzend
+     Möglichkeiten, da ist der Aufwand klein. */
   function fingersatzFolge(akkorde) {
-    var gemerkt = null;
-    return akkorde.map(function (akkord) {
-      if (!akkord) { gemerkt = null; return null; }
-      var tasten = tastenDesAkkords(akkord);
-      if (tasten.length === 0 || tasten.length > 5) { gemerkt = null; return null; }
-      gemerkt = fingersatzFuer(tasten, gemerkt);
-      return gemerkt;
+    var moeglich = akkorde.map(function (akkord) {
+      if (!akkord) { return null; }
+      var pcs = pcsDesAkkords(akkord);
+      if (pcs.length === 0 || pcs.length > 5) { return null; }
+      return griffeDesAkkords(pcs);
     });
+
+    var ergebnis = new Array(akkorde.length);
+    var i = 0;
+
+    while (i < akkorde.length) {
+      if (!moeglich[i]) { ergebnis[i] = null; i += 1; continue; }
+
+      /* Der Lauf von Akkorden, die eine Hand fassen kann. */
+      var lauf = [];
+      while (i < akkorde.length && moeglich[i]) {
+        lauf.push(moeglich[i]);
+        i += 1;
+      }
+
+      var stufen = [];
+      var vorher = null;
+
+      lauf.forEach(function (griffe, k) {
+        /* Der erste Akkord steht in Grundstellung – so, wie die Tastatur ihn
+           auch ohne Fingersatz zeigt. Erst wo die Hand schon liegt, darf sie
+           einen Ton umkehren, um einen anderen liegen zu lassen. */
+        if (k === 0) {
+          griffe = griffe.filter(function (griff) { return griff.grundstellung; });
+        }
+
+        var jetzt = griffe.map(function (griff) {
+          var kosten = griff.unbequem;
+          var von = null;
+
+          if (vorher) {
+            /* Was es kostet, über diesen Griff hierher zu kommen: die Wahl
+               des vorigen Akkords und der Weg dorthin. */
+            var bestes = null;
+            vorher.forEach(function (alt) {
+              var wert = alt.kosten + wechselkosten(alt.griff, griff) +
+                Math.abs(alt.griff.mitte - griff.mitte) / 12;
+              if (bestes === null || wert < bestes) { bestes = wert; von = alt; }
+            });
+            kosten += bestes;
+          } else {
+            /* Ohne Vorgabe liegt die Hand so tief wie möglich – genauso zeigt
+               die Tastatur den Akkord, wenn der Fingersatz aus ist. */
+            kosten += griff.tiefste / 1000;
+          }
+
+          return { griff: griff, kosten: kosten, von: von };
+        });
+
+        stufen.push(jetzt);
+        vorher = jetzt;
+      });
+
+      /* Die günstigste Lage am Ende aussuchen und den Weg zurückgehen. */
+      var bestes = stufen[stufen.length - 1][0];
+      stufen[stufen.length - 1].forEach(function (stufe) {
+        if (stufe.kosten < bestes.kosten) { bestes = stufe; }
+      });
+
+      for (var k = stufen.length - 1; k >= 0; k--) {
+        ergebnis[i - lauf.length + k] = bestes.griff.tasten;
+        bestes = bestes.von;
+      }
+    }
+
+    return ergebnis;
   }
 
   /* Die Ziffer auf der Taste: ein heller Punkt mit der Zahl – so ist sie
@@ -903,8 +1036,6 @@
   }
 
   function buildTastatur(akkord, finger) {
-    var tasten = finger ? tastenDesAkkords(akkord) : [];
-
     var svg = svgElement('svg', {
       viewBox: '0 0 ' + (ANZAHL_WEISS * T_W) + ' ' + T_H,
       'class': 'akkord__tastatur',
@@ -921,11 +1052,19 @@
       return akkord.namenNachPc[pc] || tasteName(pc, akkord.be);
     }
 
-    /* Grundton und Basston farblich abgesetzt, zweite Oktave schwächer */
-    function klasse(pc, untereOktave) {
+    /* Grundton und Basston farblich abgesetzt, blass der gleiche Ton in der
+       anderen Oktave. Ohne Fingersatz ist das die obere Oktave – mit
+       Fingersatz die, in der die Hand nicht liegt. */
+    function klasse(pc, blass) {
       var teile = ['is-' + rolle(akkord, pc)];
-      if (!untereOktave) { teile.push('is-obere'); }
+      if (blass) { teile.push('is-obere'); }
       return teile.join(' ');
+    }
+
+    /* Trägt diese Taste einen Finger? Ohne Fingersatz wird die untere Oktave
+       gespielt, mit ihm genau die Töne der Lage (siehe fingersatzFolge). */
+    function gespielt(midi, untereOktave) {
+      return finger ? !!finger[midi] : untereOktave;
     }
 
     /* Vorlesen, was auf den Tasten steht: Ziffer und Ton zusammen, in der
@@ -933,9 +1072,11 @@
        Töne beziehen. */
     if (finger) {
       svg.setAttribute('aria-label', svg.getAttribute('aria-label') +
-        ', Fingersatz ' + tasten.map(function (t) {
-          return beschriftung(t % 12) + ' ' + finger[t];
-        }).join(', '));
+        ', Fingersatz ' + Object.keys(finger).map(Number)
+          .sort(function (a, b) { return a - b; })
+          .map(function (t) {
+            return beschriftung(t % 12) + ' ' + finger[t];
+          }).join(', '));
     }
 
     var weisseBeschriftungen = [];
@@ -950,7 +1091,8 @@
 
       svg.appendChild(svgElement('rect', {
         x: i * T_W, y: 0, width: T_W, height: T_H,
-        'class': 'taste-weiss' + (aktiv ? ' ' + klasse(pc, oktave === 0) : '')
+        'class': 'taste-weiss' + (aktiv
+          ? ' ' + klasse(pc, !gespielt(midi, oktave === 0)) : '')
       }));
 
       var weisse = svgElement('text', {
@@ -960,7 +1102,7 @@
       weisse.textContent = beschriftung(pc);
       weisseBeschriftungen.push(weisse);
 
-      if (aktiv && oktave === 0 && finger && finger[midi]) {
+      if (finger && finger[midi]) {
         /* Der Punkt sitzt zwischen dem Ende der schwarzen Tasten und dem
            Tonnamen, damit er keine Taste überdeckt. */
         weisseFinger.push(fingerZeichen(i * T_W + T_W / 2, T_H - 32, 11, finger[midi]));
@@ -978,7 +1120,8 @@
         svg.appendChild(svgElement('rect', {
           x: (weissIndex + 1) * T_W - S_W / 2, y: 0,
           width: S_W, height: S_H, rx: 3,
-          'class': 'taste-schwarz' + (sAktiv ? ' ' + klasse(sPc, o === 0) : '')
+          'class': 'taste-schwarz' + (sAktiv
+            ? ' ' + klasse(sPc, !gespielt(sMidi, o === 0)) : '')
         }));
 
         if (sAktiv) {
@@ -989,7 +1132,7 @@
           schwarze.textContent = beschriftung(sPc);
           svg.appendChild(schwarze);
 
-          if (o === 0 && finger && finger[sMidi]) {
+          if (finger && finger[sMidi]) {
             svg.appendChild(fingerZeichen((weissIndex + 1) * T_W, S_H - 30, 9,
                                           finger[sMidi]));
           }

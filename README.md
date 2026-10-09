@@ -132,15 +132,17 @@ Hör-Knöpfe aus und wieder ein. Von Anfang an stehen sie auf jeder Karte; wer
 sie nicht braucht, macht damit die Karten wieder so ruhig wie vorher. Beim
 Ausblenden verstummt ein noch klingender Ton.
 
-**Fingersatz** – der Schalter daneben legt auf die Tasten der unteren Oktave
-die Finger der rechten Hand: `1` ist der Daumen, `5` der kleine Finger. Er ist
-von Anfang an aus. Gezählt wird von der tiefsten gezeigten Taste nach oben –
-das ist nicht immer der Grundton: in G♭-Dur liegt D♭ unter G♭, dort steht die
-`1` auf dem D♭. Die Zahlen folgen der Abfolge, jeder Akkord greift also dort
-weiter, wo die Hand vom vorigen her liegt; derselbe Akkord kann an anderer
-Stelle andere Zahlen tragen. Was mehr als fünf Töne hat (`C13`), fasst keine
-Hand auf einmal – dort steht statt der Zahlen ein Hinweis. Im Griffbild gibt es
-keinen Fingersatz, weil die Gitarre anders gegriffen wird.
+**Fingersatz** – der Schalter daneben legt die Finger der rechten Hand auf die
+Tasten: `1` ist der Daumen, `5` der kleine Finger. Er ist von Anfang an aus.
+Ohne ihn zeigt die Tastatur die Töne in der unteren Oktave (ab C4); mit ihm
+zeigt sie die Lage, in der die Hand wirklich liegt – das kann eine Oktave
+höher sein, und der Akkord steht dann manchmal mit einem anderen Ton im Bass,
+weil ein gemeinsamer Ton liegen bleiben soll. Die Zahlen folgen der Abfolge:
+jeder Akkord greift dort weiter, wo die Hand vom vorigen her liegt, derselbe
+Akkord kann an anderer Stelle also andere Zahlen tragen. Was mehr als fünf
+Töne hat (`C13`), fasst keine Hand auf einmal – dort steht statt der Zahlen ein
+Hinweis. Im Griffbild gibt es keinen Fingersatz, weil die Gitarre anders
+gegriffen wird.
 
 Tonart, Progression, Schreibweise sowie Sept-, Gitarren-, Anhören- und
 Fingersatz-Schalter landen in der Adresse (`?tonart=G-Dur&p=…&sept=1&griff=gitarre`,
@@ -180,8 +182,9 @@ die drei Umrisse der Notenschrift sind als Pfaddaten eingebettet (siehe
 - Bei einem Slash-Akkord zählt der Basston mit: `C/G` zeigt G grün, `C/B`
   nimmt das B zusätzlich in die Tonliste auf (tiefster Ton, deshalb vorn).
 - Die Klaviatur zeigt zwei Oktaven (C4–B5). Der Grundton ist orange, die
-  übrigen Akkordtöne blau, der Basston grün; dieselben Töne eine Oktave
-  höher blasser.
+  übrigen Akkordtöne blau, der Basston grün; dieselben Töne in der anderen
+  Oktave blasser. Ohne Fingersatz ist das die obere, mit Fingersatz die, in der
+  die Hand nicht liegt.
 
 ### Wie die Einordnung entsteht
 
@@ -296,25 +299,40 @@ verschwinden.
 
 ### Wie der Fingersatz entsteht
 
-- Gezeigt wird er in der Lage, in der man die Karte spielt: eine Oktave ab C4,
-  jeder Akkordton genau einmal. Die blasse Oktave darüber trägt keine Zahlen –
-  sie erinnert nur daran, dass derselbe Ton auch höher liegt.
-- Die Hand soll bequem liegen. Wie weit zwei Finger auseinander liegen, hängt
-  vom Tonabstand ab: Halbton und Ganzton einen Finger weiter, die Terz zwei, ab
-  der Quinte vier. Aus diesen Wunschabständen kommt die Spanne des Griffs;
-  verteilt wird sie nach den wirklichen Tonabständen – wo die Musik weiter
-  springt, liegt ein Finger weiter weg. Ein Dreiklang in weiter Lage (C–E–G)
-  wird so zu `1 3 5`.
-- Der zweite Wunsch ist, dass Finger liegen bleiben: ein Ton, der im Akkord
-  davor schon vorkam, möchte seinen Finger behalten – das wiegt eine
-  unbequeme Spreizung auf. Dafür werden alle Fingerfolgen durchgerechnet
-  (höchstens zehn) und nach beiden Wünschen benotet; die beste gewinnt. In
-  `I V vi IV` bekommt so jeder Akkord `1 3 5`, und in `C G7 C` bleibt die Hand
-  nach dem G7 liegen, statt in die `1 3 5`-Lage zurückzuspringen.
+- Eine Hand kann einen Akkord auf mehrere Weisen greifen: mit verschiedenem Ton
+  im Bass und in verschiedenen Oktaven. Zuerst werden deshalb die möglichen
+  **Lagen** aufgestellt – jeder Akkordton genau einmal, höchstens eine Oktave
+  (zwölf Halbtöne) weit, und ganz auf der gezeichneten Tastatur (C4–B5). Zu
+  jeder Lage werden die Fingerfolgen durchgerechnet (höchstens zehn). Die
+  tiefste Lage ist die, die die Tastatur auch ohne Fingersatz zeigt: in C-Dur
+  also C–E–G, in G-Dur aber D–G–B, weil das tiefe G unter C4 liegt (der
+  Grundton muss also nicht im Bass stehen – eine Umkehrung ist kein Fehler,
+  sie kostet nur ein wenig, damit ein Akkord nicht ohne Grund mit einem
+  anderen Ton im Bass dasteht).
+- Drei Wünsche entscheiden, welche Lage gewinnt – und zwar nicht Akkord für
+  Akkord, sondern die ganze Abfolge auf einmal, damit ein liegen gebliebener
+  Ton nicht am nächsten Akkord scheitert:
+  - **Ein Ton, der schon im Akkord davor lag, behält seinen Finger.** Das wiegt
+    am schwersten: ein verlorener Ton zählt so viel wie hundert kleine
+    Unbequemlichkeiten oder ein Meter Handbewegung. Deshalb darf die Hand hier
+    auch einen Ton umkehren, statt in die bequemere Grundstellung zu springen.
+  - **Die Hand soll bequem liegen.** Wie weit zwei Finger auseinander liegen,
+    hängt vom Tonabstand ab: Halbton und Ganzton einen Finger weiter, die Terz
+    zwei, ab der Quinte vier. Aus diesen Wunschabständen kommt die Spanne des
+    Griffs; verteilt wird sie nach den wirklichen Tonabständen – wo die Musik
+    weiter springt, liegt ein Finger weiter weg. Ein Dreiklang in weiter Lage
+    (C–E–G) wird so zu `1 3 5`.
+  - **Die Hand soll nicht springen.** Von zwei gleich guten Lagen gewinnt die
+    näher an der vorigen. Ohne Vorgabe liegt sie so tief wie möglich – so, wie
+    die Tastatur ohne Fingersatz gezeichnet ist. In `I V vi IV` bekommt so
+    jeder Akkord `1 3 5`, und in `C G7 C` bleibt das G über den Wechsel hinweg
+    unter dem kleinen Finger.
 - Weil das Gedächtnis von Akkord zu Akkord weiterläuft, kann derselbe Akkord
-  an anderer Stelle andere Zahlen tragen. Nach einem Akkord, den eine Hand
-  nicht fasst, fängt die Lage wieder von vorn an – niemand weiß, wo die Finger
-  dann gerade liegen.
+  an anderer Stelle andere Zahlen tragen. Der erste Akkord einer Abfolge liegt
+  so tief wie möglich, also in der Oktave, die die Tastatur ohne Fingersatz
+  zeigt; erst wo die Hand schon liegt, darf sie einen Ton umkehren, um einen
+  anderen liegen zu lassen. Nach einem Akkord, den eine Hand nicht fasst, fängt
+  die Lage wieder von vorn an – niemand weiß, wo die Finger dann gerade liegen.
 - Was mehr als fünf Töne hat (`C13`) oder gar nicht erkannt wurde, bekommt
   keine Zahlen, sondern den Hinweis, dass es keine Hand auf einmal fasst.
 
