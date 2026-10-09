@@ -135,6 +135,9 @@
   /* Die Hör-Knöpfe stehen anfangs auf jeder Karte; wer sie nicht braucht,
      blendet sie aus. */
   var hoerKnoepfe = true;
+  /* Der Fingersatz ist die Ausnahme: er steht erst auf den Tasten, wenn man
+     ihn haben will. */
+  var fingerModus = false;
 
   function notenName(buchstabe, vorzeichen) {
     if (notenStil === 'deutsch' && buchstabe === 'B') {
@@ -735,7 +738,171 @@
     return el;
   }
 
-  function buildTastatur(akkord) {
+  /* ---------------------------------------------------------------
+     4b. Fingersatz
+     ---------------------------------------------------------------
+
+     Der Fingersatz gilt für die rechte Hand: der Daumen ist 1, der kleine
+     Finger 5. Gezeigt wird er nur für die Töne der unteren Oktave – das ist
+     die Lage, in der man die Karte spielt; die blasse Oktave darüber ist nur
+     die Erinnerung, dass derselbe Ton auch eine Oktave höher liegt.
+
+     Zwei Regeln entscheiden, welche Zahl auf welcher Taste liegt:
+
+     - Die Hand soll natürlich liegen. Wie weit zwei Finger auseinander
+       liegen, richtet sich nach dem Tonabstand: Halbton und Ganzton einen
+       Finger weiter, die Terz zwei, ab der Quinte vier.
+     - Ein Ton, der schon im Akkord davor lag, soll seinen Finger behalten.
+       Dafür werden alle möglichen Fingerfolgen durchgerechnet und benotet;
+       ein liegen gebliebener Finger wiegt eine unbequeme Spreizung auf.
+
+     Mehr als fünf Töne kann eine Hand nicht auf einmal greifen – solche
+     Akkorde bekommen keinen Fingersatz, sondern einen Hinweis. */
+
+  function idealerFingerabstand(halbtoene) {
+    if (halbtoene <= 2) { return 1; }   /* Halbton, Ganzton */
+    if (halbtoene <= 4) { return 2; }   /* kleine und große Terz */
+    if (halbtoene <= 6) { return 3; }   /* Quarte, Tritonus */
+    return 4;                           /* Quinte und weiter */
+  }
+
+  /* Alle streng aufsteigenden Fingerfolgen dieser Länge – höchstens zehn. */
+  function fingerFolgen(laenge) {
+    var folgen = [];
+
+    function weiter(naechster, rest, bisher) {
+      if (rest === 0) { folgen.push(bisher.slice()); return; }
+      for (var f = naechster; f <= 5 - rest + 1; f++) {
+        bisher.push(f);
+        weiter(f + 1, rest - 1, bisher);
+        bisher.pop();
+      }
+    }
+
+    weiter(1, laenge, []);
+    return folgen;
+  }
+
+  /* Die Tasten eines Akkords in der unteren Oktave: jeder Ton genau einmal,
+     von unten nach oben. */
+  function tastenDesAkkords(akkord) {
+    var gesehen = {};
+    var tasten = [];
+    akkord.pcs.forEach(function (pc) {
+      if (gesehen[pc]) { return; }
+      gesehen[pc] = true;
+      tasten.push(60 + pc);            /* C4 aufwärts */
+    });
+    tasten.sort(function (a, b) { return a - b; });
+    return tasten;
+  }
+
+  /* Wie weit die Finger zwischen den Tönen auseinander liegen sollen: die
+     Spanne einer Hand wird nach den Tonabständen verteilt, denn wo die Musik
+     weiter springt, liegt ein Finger weiter weg. */
+  function zielAbstaende(tasten) {
+    var weiten = [];
+    var wunsch = 0;
+    var i;
+
+    for (i = 1; i < tasten.length; i++) {
+      var halbtoene = tasten[i] - tasten[i - 1];
+      weiten.push({ halbtoene: halbtoene, ziel: 1, rest: 0 });
+      wunsch += idealerFingerabstand(halbtoene);
+    }
+    if (weiten.length === 0) { return []; }
+
+    /* Eine Hand spannt höchstens vier Fingerabstände, und jeder Tonschritt
+       braucht mindestens einen. */
+    var spanne = Math.max(weiten.length, Math.min(4, Math.round(wunsch)));
+    var tonSumme = 0;
+    weiten.forEach(function (w) { tonSumme += w.halbtoene; });
+
+    var summe = 0;
+    weiten.forEach(function (w) {
+      var genau = w.halbtoene * spanne / tonSumme;
+      w.ziel = Math.max(1, Math.floor(genau));
+      w.rest = genau - w.ziel;      /* negativ, wenn aufgerundet wurde */
+      summe += w.ziel;
+    });
+
+    /* Was übrig bleibt, bekommt der weiteste Sprung – dort ist ein Finger
+       mehr am wenigsten im Weg. */
+    while (summe < spanne) {
+      var weit = 0;
+      weiten.forEach(function (w, k) {
+        var besser = w.rest > weiten[weit].rest ||
+          (w.rest === weiten[weit].rest && w.halbtoene > weiten[weit].halbtoene);
+        if (besser) { weit = k; }
+      });
+      weiten[weit].ziel += 1;
+      weiten[weit].rest = -1;       /* nicht zweimal dasselbe */
+      summe += 1;
+    }
+
+    return weiten.map(function (w) { return w.ziel; });
+  }
+
+  /* Welche Taste welchen Finger bekommt. "gemerkt" sind die Finger des
+     Akkords davor; ohne sie liegt die Hand von selbst so tief wie möglich. */
+  function fingersatzFuer(tasten, gemerkt) {
+    var ziel = zielAbstaende(tasten);
+    var beste = null;
+    var besterWert = 0;
+
+    fingerFolgen(tasten.length).forEach(function (folge) {
+      var wert = 0;
+      tasten.forEach(function (taste, i) {
+        if (i > 0) {
+          wert -= Math.abs((folge[i] - folge[i - 1]) - ziel[i - 1]);
+        }
+        /* Ein liegen gebliebener Finger wiegt eine unbequeme Spreizung auf. */
+        if (gemerkt && gemerkt[taste] === folge[i]) { wert += 3; }
+      });
+      /* Bei gleichem Wert bleibt die zuerst geprüfte Folge – die mit dem
+         tiefsten Daumen. */
+      if (beste === null || wert > besterWert) { beste = folge; besterWert = wert; }
+    });
+
+    var ergebnis = {};
+    tasten.forEach(function (taste, i) { ergebnis[taste] = beste[i]; });
+    return ergebnis;
+  }
+
+  /* Der Fingersatz über die ganze Abfolge, ein Eintrag je Karte. Was ein
+     Akkord greift, geht als Gedächtnis an den nächsten weiter. Ein Akkord,
+     den eine Hand nicht fassen kann, bekommt keinen – und danach beginnt die
+     Hand wieder von vorn, weil nicht bekannt ist, welche Finger gerade wo
+     liegen. */
+  function fingersatzFolge(akkorde) {
+    var gemerkt = null;
+    return akkorde.map(function (akkord) {
+      if (!akkord) { gemerkt = null; return null; }
+      var tasten = tastenDesAkkords(akkord);
+      if (tasten.length === 0 || tasten.length > 5) { gemerkt = null; return null; }
+      gemerkt = fingersatzFuer(tasten, gemerkt);
+      return gemerkt;
+    });
+  }
+
+  /* Die Ziffer auf der Taste: ein heller Punkt mit der Zahl – so ist sie
+     nicht mit dem Tonnamen zu verwechseln. */
+  function fingerZeichen(x, y, radius, ziffer) {
+    var gruppe = svgElement('g', { 'class': 'tasten-finger' });
+    gruppe.appendChild(svgElement('circle', {
+      cx: x, cy: y, r: radius, 'class': 'tasten-finger-kreis'
+    }));
+    var zahl = svgElement('text', {
+      x: x, y: Math.round(y + radius * 0.36), 'class': 'tasten-finger-zahl'
+    });
+    zahl.textContent = ziffer;
+    gruppe.appendChild(zahl);
+    return gruppe;
+  }
+
+  function buildTastatur(akkord, finger) {
+    var tasten = finger ? tastenDesAkkords(akkord) : [];
+
     var svg = svgElement('svg', {
       viewBox: '0 0 ' + (ANZAHL_WEISS * T_W) + ' ' + T_H,
       'class': 'akkord__tastatur',
@@ -759,12 +926,24 @@
       return teile.join(' ');
     }
 
+    /* Vorlesen, was auf den Tasten steht: Ziffer und Ton zusammen, in der
+       Reihenfolge der Tasten – sonst ließe sich die Zahlenfolge nicht auf die
+       Töne beziehen. */
+    if (finger) {
+      svg.setAttribute('aria-label', svg.getAttribute('aria-label') +
+        ', Fingersatz ' + tasten.map(function (t) {
+          return beschriftung(t % 12) + ' ' + finger[t];
+        }).join(', '));
+    }
+
     var weisseBeschriftungen = [];
+    var weisseFinger = [];
 
     /* weiße Tasten */
     for (var i = 0; i < ANZAHL_WEISS; i++) {
       var oktave = Math.floor(i / 7);
-      var pc = (60 + oktave * 12 + WEISSE_TOENE[i % 7]) % 12;
+      var midi = 60 + oktave * 12 + WEISSE_TOENE[i % 7];
+      var pc = midi % 12;
       var aktiv = !!imAkkord[pc];
 
       svg.appendChild(svgElement('rect', {
@@ -778,13 +957,20 @@
       });
       weisse.textContent = beschriftung(pc);
       weisseBeschriftungen.push(weisse);
+
+      if (aktiv && oktave === 0 && finger && finger[midi]) {
+        /* Der Punkt sitzt zwischen dem Ende der schwarzen Tasten und dem
+           Tonnamen, damit er keine Taste überdeckt. */
+        weisseFinger.push(fingerZeichen(i * T_W + T_W / 2, T_H - 32, 11, finger[midi]));
+      }
     }
 
     /* schwarze Tasten liegen darüber */
     for (var o = 0; o < 2; o++) {
       for (var k = 0; k < SCHWARZE_NACH.length; k++) {
         var weissIndex = o * 7 + SCHWARZE_NACH[k];
-        var sPc = (60 + o * 12 + SCHWARZER_TON[k]) % 12;
+        var sMidi = 60 + o * 12 + SCHWARZER_TON[k];
+        var sPc = sMidi % 12;
         var sAktiv = !!imAkkord[sPc];
 
         svg.appendChild(svgElement('rect', {
@@ -800,12 +986,18 @@
           });
           schwarze.textContent = beschriftung(sPc);
           svg.appendChild(schwarze);
+
+          if (o === 0 && finger && finger[sMidi]) {
+            svg.appendChild(fingerZeichen((weissIndex + 1) * T_W, S_H - 30, 9,
+                                          finger[sMidi]));
+          }
         }
       }
     }
 
     /* weiße Beschriftungen zuletzt, damit sie oben liegen */
     weisseBeschriftungen.forEach(function (t) { svg.appendChild(t); });
+    weisseFinger.forEach(function (g) { svg.appendChild(g); });
 
     return svg;
   }
@@ -1128,6 +1320,8 @@
   var elSept = document.getElementById('septakkorde');
   var elGitarre = document.getElementById('gitarre');
   var elHoeren = document.getElementById('hoeren');
+  var elFingersatz = document.getElementById('fingersatz');
+  var elLegendeFinger = document.getElementById('legende-finger');
   var elLegendeKlavier = document.getElementById('legende-klavier');
   var elLegendeGitarre = document.getElementById('legende-gitarre');
   var elBau = document.getElementById('bau');
@@ -1237,6 +1431,7 @@
   function zeigeLegende() {
     elLegendeKlavier.hidden = griffModus;
     elLegendeGitarre.hidden = !griffModus;
+    elLegendeFinger.hidden = !fingerModus;
   }
 
   function holeTonart(id) {
@@ -1272,7 +1467,9 @@
     return absatz;
   }
 
-  function karte(token, akkord, vorher, istLetzter) {
+  /* finger ist der Fingersatz dieses Akkords oder null, wenn keiner gezeigt
+     wird – welche Taste welchen Finger bekommt, steht in fingersatzFolge. */
+  function karte(token, akkord, vorher, istLetzter, finger) {
     var box = document.createElement('article');
 
     if (!akkord) {
@@ -1318,7 +1515,16 @@
     /* Klavier ist die Hauptansicht, Gitarre die Alternative. Findet sich
        wider Erwarten kein Griff, bleibt die Klaviatur stehen. */
     var bild = griffModus ? buildGitarre(akkord) : null;
-    box.appendChild(bild || buildTastatur(akkord));
+    box.appendChild(bild || buildTastatur(akkord, fingerModus ? finger : null));
+
+    /* Mehr als fünf Töne greift keine Hand auf einmal – dann bleibt die
+       Tastatur ohne Zahlen, und es steht dabei, warum. */
+    if (fingerModus && !bild && !finger) {
+      var zuViele = document.createElement('p');
+      zuViele.className = 'akkord__finger';
+      zuViele.textContent = 'Mehr als fünf Töne – das fasst keine Hand auf einmal.';
+      box.appendChild(zuViele);
+    }
 
     /* Die Einordnung steht unter dem Bild, nicht darüber: sonst rutscht die
        Tastatur von Karte zu Karte auf eine andere Höhe, je nachdem, wie lang
@@ -1411,12 +1617,17 @@
     var vorschlag = vorschlagTonart(akkorde, ta);
     if (vorschlag) { elErgebnis.appendChild(vorschlagZeile(vorschlag, akkorde)); }
 
+    /* Der Fingersatz läuft über die ganze Abfolge: welcher Finger auf welcher
+       Taste liegt, hängt davon ab, was der Akkord davor gespielt hat. */
+    var fingersatz = fingerModus ? fingersatzFolge(akkorde) : null;
+
     tokens.forEach(function (token, i) {
       var vorher = null;
       for (var j = i - 1; j >= 0; j--) {
         if (akkorde[j]) { vorher = akkorde[j]; break; }
       }
-      elErgebnis.appendChild(karte(token, akkorde[i], vorher, i === tokens.length - 1));
+      elErgebnis.appendChild(karte(token, akkorde[i], vorher, i === tokens.length - 1,
+                                   fingersatz ? fingersatz[i] : null));
     });
 
     zeigeIdeen(akkorde, tokens, ta);
@@ -2145,7 +2356,8 @@
     try {
       window.localStorage.setItem(SPEICHER, JSON.stringify({
         tonart: ta.id, progression: progression, noten: notenStil,
-        sept: septAkkorde, griff: griffModus, hoeren: hoerKnoepfe
+        sept: septAkkorde, griff: griffModus, hoeren: hoerKnoepfe,
+        fingersatz: fingerModus
       }));
     } catch (e) { /* privater Modus o. Ä. – dann eben nicht */ }
 
@@ -2156,7 +2368,8 @@
                 (notenStil === 'deutsch' ? '&noten=deutsch' : '') +
                 (septAkkorde ? '&sept=1' : '') +
                 (griffModus ? '&griff=gitarre' : '') +
-                (hoerKnoepfe ? '' : '&hoeren=0');
+                (hoerKnoepfe ? '' : '&hoeren=0') +
+                (fingerModus ? '&fingersatz=1' : '');
       window.history.replaceState(null, '', neu);
     } catch (e) { /* bei file:// nicht überall erlaubt */ }
   }
@@ -2167,11 +2380,11 @@
       return {
         tonart: p.get('tonart'), progression: p.get('p'),
         noten: p.get('noten'), sept: p.get('sept'), griff: p.get('griff'),
-        hoeren: p.get('hoeren')
+        hoeren: p.get('hoeren'), fingersatz: p.get('fingersatz')
       };
     } catch (e) {
       return { tonart: null, progression: null, noten: null, sept: null,
-               griff: null, hoeren: null };
+               griff: null, hoeren: null, fingersatz: null };
     }
   }
 
@@ -2267,6 +2480,12 @@
   }
   elHoeren.checked = hoerKnoepfe;
 
+  /* Der Fingersatz steht nur da, wenn er angeknipst wurde. */
+  if (ausAdresse.fingersatz === '1' || (!ausAdresse.fingersatz && gemerkt && gemerkt.fingersatz)) {
+    fingerModus = true;
+  }
+  elFingersatz.checked = fingerModus;
+
   fuelleTonarten();
   fuelleVorlagen();
 
@@ -2337,6 +2556,12 @@
     /* Verschwindet der Knopf, während sein Ton klingt, soll er auch
        verstummen – sonst hätte man Klang ohne sichtbare Ursache. */
     if (!hoerKnoepfe) { stoppeKlang(); }
+    zeichne();
+  });
+
+  elFingersatz.addEventListener('change', function () {
+    fingerModus = elFingersatz.checked;
+    zeigeLegende();
     zeichne();
   });
 

@@ -2,8 +2,9 @@
 
 Eine einzelne Webseite: Tonart wählen, Progression eingeben – jeder Akkord wird
 mit Name, Tönen und Klaviertastatur angezeigt, auf Wunsch stattdessen mit
-Gitarrengriff, und lässt sich auf Klick anhören. Läuft auf Rechner und Handy,
-braucht keinen Server und keine Internetverbindung.
+Gitarrengriff oder mit dem Fingersatz auf den Tasten, und lässt sich auf Klick
+anhören. Läuft auf Rechner und Handy, braucht keinen Server und keine
+Internetverbindung.
 
 ## Öffnen
 
@@ -126,15 +127,26 @@ nichts – der Browser gibt Ton ohnehin erst nach einer Nutzerhandlung heraus.
 Ein zweiter Klick löst den ersten Klang ab, statt beide übereinander zu legen.
 Unerkannte Karten haben keinen Knopf, weil es dort nichts zu hören gibt.
 
-**Anhören-Knöpfe** – der vierte Schalter neben den Notennamen blendet die
+**Anhören-Knöpfe** – der Schalter neben den Notennamen blendet die
 Hör-Knöpfe aus und wieder ein. Von Anfang an stehen sie auf jeder Karte; wer
 sie nicht braucht, macht damit die Karten wieder so ruhig wie vorher. Beim
 Ausblenden verstummt ein noch klingender Ton.
 
-Tonart, Progression, Schreibweise sowie Sept-, Gitarren- und Anhören-Schalter
-landen in der Adresse (`?tonart=G-Dur&p=…&sept=1&griff=gitarre`, beim
-Ausblenden `&hoeren=0`) und im Browserspeicher. Ein kopierter Link stellt also
-genau denselben Zustand wieder her.
+**Fingersatz** – der Schalter daneben legt auf die Tasten der unteren Oktave
+die Finger der rechten Hand: `1` ist der Daumen, `5` der kleine Finger. Er ist
+von Anfang an aus. Gezählt wird von der tiefsten gezeigten Taste nach oben –
+das ist nicht immer der Grundton: in G♭-Dur liegt D♭ unter G♭, dort steht die
+`1` auf dem D♭. Die Zahlen folgen der Abfolge, jeder Akkord greift also dort
+weiter, wo die Hand vom vorigen her liegt; derselbe Akkord kann an anderer
+Stelle andere Zahlen tragen. Was mehr als fünf Töne hat (`C13`), fasst keine
+Hand auf einmal – dort steht statt der Zahlen ein Hinweis. Im Griffbild gibt es
+keinen Fingersatz, weil die Gitarre anders gegriffen wird.
+
+Tonart, Progression, Schreibweise sowie Sept-, Gitarren-, Anhören- und
+Fingersatz-Schalter landen in der Adresse (`?tonart=G-Dur&p=…&sept=1&griff=gitarre`,
+beim Ausblenden `&hoeren=0`, mit Fingersatz `&fingersatz=1`) und im
+Browserspeicher. Ein kopierter Link stellt also genau denselben Zustand wieder
+her.
 
 **Vorzeichen der Tonart** – über den Karten steht, wie viele ♯ oder ♭ zur
 gewählten Tonart gehören, wie sie heißen und welche Tonart dieselben
@@ -149,8 +161,8 @@ Beides zusammen hilft beim Nachvollziehen am Instrument – c-Moll hat die drei
 index.html      die Seite
 css/style.css   das gesamte Design (Farben und Maße als CSS-Variablen)
 js/main.js      Musiktheorie, Eingabe-Parser, Funktionsbestimmung, Ideen zum
-                Variieren, Anhören der Akkorde, Zeichnung von Tastatur,
-                Griffbild und Notenbild
+                Variieren, Anhören der Akkorde, Fingersatz, Zeichnung von
+                Tastatur, Griffbild und Notenbild
 ```
 
 Kein Framework, kein Bundler, keine externen Schriften oder Bibliotheken –
@@ -282,6 +294,30 @@ verschwinden.
   übernimmt die Suche – ein Tippfehler in der Tabelle kann also keinen falschen
   Akkord zeigen.
 
+### Wie der Fingersatz entsteht
+
+- Gezeigt wird er in der Lage, in der man die Karte spielt: eine Oktave ab C4,
+  jeder Akkordton genau einmal. Die blasse Oktave darüber trägt keine Zahlen –
+  sie erinnert nur daran, dass derselbe Ton auch höher liegt.
+- Die Hand soll bequem liegen. Wie weit zwei Finger auseinander liegen, hängt
+  vom Tonabstand ab: Halbton und Ganzton einen Finger weiter, die Terz zwei, ab
+  der Quinte vier. Aus diesen Wunschabständen kommt die Spanne des Griffs;
+  verteilt wird sie nach den wirklichen Tonabständen – wo die Musik weiter
+  springt, liegt ein Finger weiter weg. Ein Dreiklang in weiter Lage (C–E–G)
+  wird so zu `1 3 5`.
+- Der zweite Wunsch ist, dass Finger liegen bleiben: ein Ton, der im Akkord
+  davor schon vorkam, möchte seinen Finger behalten – das wiegt eine
+  unbequeme Spreizung auf. Dafür werden alle Fingerfolgen durchgerechnet
+  (höchstens zehn) und nach beiden Wünschen benotet; die beste gewinnt. In
+  `I V vi IV` bekommt so jeder Akkord `1 3 5`, und in `C G7 C` bleibt die Hand
+  nach dem G7 liegen, statt in die `1 3 5`-Lage zurückzuspringen.
+- Weil das Gedächtnis von Akkord zu Akkord weiterläuft, kann derselbe Akkord
+  an anderer Stelle andere Zahlen tragen. Nach einem Akkord, den eine Hand
+  nicht fasst, fängt die Lage wieder von vorn an – niemand weiß, wo die Finger
+  dann gerade liegen.
+- Was mehr als fünf Töne hat (`C13`) oder gar nicht erkannt wurde, bekommt
+  keine Zahlen, sondern den Hinweis, dass es keine Hand auf einmal fasst.
+
 ## Veröffentlichen (GitHub Pages)
 
 ```sh
@@ -302,6 +338,7 @@ nicht ins Netz.
 - Größerer Tastaturumfang mit horizontalem Scrollen
 - Umkehrungen auf der Tastatur tatsächlich in der richtigen Lage zeigen,
   statt nur den Basston zu markieren
+- Fingersatz auch für die linke Hand und für das Griffbild
 - Töne weglassen (`C(no3)`) und Alterationen wie `7♯11`
 - Andere Stimmungen (Drop D, Kapodaster) und ein Umschalter zwischen mehreren
   Griffvarianten je Akkord

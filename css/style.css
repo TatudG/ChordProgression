@@ -486,6 +486,14 @@ main {
 
 .akkord__schritt strong { color: var(--text); font-weight: 700; }
 
+/* Hinweis an Stelle des Fingersatzes, wenn die Hand den Akkord nicht fasst. */
+.akkord__finger {
+  margin: -0.3rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: var(--text-leise);
+}
+
 /* Hör-Knopf: steht am Fuß jeder Karte. margin-top:auto schiebt ihn nach unten,
    sodass er in allen Karten auf einer Höhe liegt – auch neben einem Griffbild,
    das kürzer ist als eine Tastatur. */
@@ -544,6 +552,19 @@ main {
 }
 
 .tasten-label--aktiv { fill: #ffffff; }
+
+/* Fingersatzziffer auf der Taste: heller Punkt mit dunkler Zahl. Der Punkt
+   sitzt zwischen Tonname und Tastenende, damit die Zahl nicht mit dem Tonnamen
+   verwechselt wird. */
+.tasten-finger-kreis { fill: #ffffff; }
+
+.tasten-finger-zahl {
+  font-size: 15px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: #26272c;
+  pointer-events: none;
+}
 
 /* ---------- Gitarrengriff ---------- */
 
@@ -675,8 +696,10 @@ main {
 
 .legende__liste li { display: flex; align-items: center; gap: 0.5rem; }
 
-/* display:flex würde das hidden-Attribut sonst aushebeln */
-.legende__liste[hidden] { display: none; }
+/* display:flex würde das hidden-Attribut sonst aushebeln – auch am einzelnen
+   Eintrag, denn der Fingersatz-Hinweis wird allein ein- und ausgeblendet. */
+.legende__liste[hidden],
+.legende__liste li[hidden] { display: none; }
 
 .punkt {
   width: 0.85rem;
@@ -689,6 +712,23 @@ main {
 .punkt--bass { background: var(--bass); }
 .punkt--leer { background: transparent; }
 .punkt--oktave { background: var(--ton); opacity: 0.4; }
+
+/* Sieht aus wie die Fingersatzziffer auf der Taste: heller Punkt, dunkle
+   Zahl. */
+.punkt--finger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: var(--taste-weiss);
+  border: 0;
+  color: #26272c;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+}
 
 /* ---------- Fuß ---------- */
 
