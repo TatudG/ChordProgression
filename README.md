@@ -86,6 +86,15 @@ Basston eines Slash-Akkords grün. `○` heißt leere Saite, `×` nicht anschlag
 ein Balken ist ein Barregriff, und links steht bei Griffen weiter oben am Hals
 die Lage („2. Bund").
 
+**Vorschlag zur Tonart** – tippt man fertige Akkorde statt Stufen, muss man
+nicht wissen, in welcher Tonart man gerade denkt: stehen mindestens zwei
+Akkorde im Feld, die besser zu einer anderen Tonart passen als zur eingestellten,
+erscheint über den Karten eine Zeile *„Diese Akkorde klingen nach C-Dur – dort
+sind es die Stufen I V vi IV"* mit einem Knopf daneben. Ein Klick stellt die
+Tonart ein; die Karten rechnen mit ihr neu, und die Ideen zum Variieren richten
+sich danach. Bei Stufen im Feld kommt der Vorschlag nicht – dort gibt die
+gewählte Tonart jeden Ton ohnehin selbst an.
+
 **Einordnung auf jeder Karte** – unter der Klaviatur stehen zwei kurze Zeilen
 (so liegen die Tastaturen aller Karten auf einer Linie, egal wie lang die Sätze
 sind). Die
@@ -165,6 +174,20 @@ die drei Umrisse der Notenschrift sind als Pfaddaten eingebettet (siehe
   Halbton, Ganzton, Terzverwandtschaft, Tritonus, gleicher Ton als Umdeutung).
   „Halbschluss" gibt es nur für den letzten Akkord, und nur, wenn die
   Progression dort offen stehen bleibt.
+
+### Wie der Tonart-Vorschlag entsteht
+
+- Alle 24 Tonarten werden durchgezählt und jede an denselben Akkorden gemessen.
+  Punkte gibt es, wenn der Grundton auf einer Stufe der Tonleiter liegt und das
+  Tongeschlecht zur leitereigenen Stufe passt; die Tonika am Anfang oder am Ende
+  zählt doppelt, weil sie die Tonart festlegt. Ein Akkord, dessen Grundton gar
+  nicht zur Tonart gehört, zieht sie nach unten.
+- Vorgeschlagen wird nur, was die eingestellte Tonart **übertrifft**. Zwei
+  Tonarten, die die Akkorde gleich gut erklären, streiten nicht – dann bleibt
+  es bei der gewählten. Deshalb erscheint der Vorschlag auch nicht mehr, sobald
+  man ihn angenommen hat.
+- Genannt werden die Stufen nur, wenn jeder Akkord im Feld eine hat. Steht
+  Unerkanntes dabei, bleibt es beim bloßen Namen der Tonart.
 
 ### Wie die Ideen entstehen
 

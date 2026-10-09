@@ -665,6 +665,10 @@
 
     return {
       stufe: stufe,
+      /* Wurde der Akkord als Stufe geschrieben oder als fertiger Akkord?
+         Steht eine Stufe im Feld, gibt die Tonart den Ton an – dann ist die
+         Tonart bereits gewählt und muss nicht mehr erraten werden. */
+      alsStufe: !!rohdaten.stufe,
       /* Buchstabe und Vorzeichen des Grundtons werden mitgegeben: für die
          Funktionsbestimmung und die Vorschläge wird der Akkord von dort aus
          weitergedacht (Quinte hoch, Stufe darüber …). */
@@ -1180,6 +1184,50 @@
     zeichne();
   }
 
+  /* Der Vorschlag zur Tonart, als Zeile über den Karten – dort, wo man die
+     Tonart sieht. Ein Klick stellt sie ein; Karten und Ideen rechnen dann
+     von selbst damit weiter. */
+  function vorschlagZeile(vorschlag, akkorde) {
+    var zeile = document.createElement('div');
+    zeile.className = 'vorschlag';
+
+    var satz = document.createElement('p');
+    satz.className = 'vorschlag__satz';
+    satz.appendChild(document.createTextNode('Diese Akkorde klingen nach '));
+
+    var name = document.createElement('strong');
+    name.textContent = tonartLabel(vorschlag);
+    satz.appendChild(name);
+
+    /* Die Stufen nur nennen, wenn jeder Akkord im Feld eine hat – sonst
+       stünde eine Stufenfolge da, die nicht zu allem passt, was man sieht. */
+    var stufen = [];
+    var alleDrin = akkorde.length > 0;
+    akkorde.forEach(function (akkord) {
+      var grad = akkord ? stufeInTonart(akkord, vorschlag) : 0;
+      if (!grad) { alleDrin = false; return; }
+      stufen.push(stufenZeichen(grad, akkord.typ));
+    });
+
+    satz.appendChild(document.createTextNode(alleDrin
+      ? ' – dort sind es die Stufen ' + stufen.join(' ') + '.'
+      : '.'));
+    zeile.appendChild(satz);
+
+    var knopf = document.createElement('button');
+    knopf.type = 'button';
+    knopf.className = 'knopf vorschlag__knopf';
+    knopf.textContent = tonartLabel(vorschlag) + ' übernehmen';
+    knopf.addEventListener('click', function () {
+      elTonart.value = vorschlag.id;
+      schreibeFeld();
+      zeichne();
+    });
+    zeile.appendChild(knopf);
+
+    return zeile;
+  }
+
   /* Die Legende erklärt die Farben – und die sind in beiden Ansichten
      dieselben, nur die vierte Zeile gilt bloß fürs Klavier. */
   function zeigeLegende() {
@@ -1346,6 +1394,12 @@
        Akkord mitgegeben, damit sie den Schritt beschreiben kann. Unerkanntes
        zählt dabei nicht als Vorgänger. */
     var akkorde = tokens.map(function (token) { return leseAkkord(token, ta); });
+
+    /* Stehen fertige Akkorde im Feld, die besser zu einer anderen Tonart
+       passen, wird sie vorgeschlagen – noch vor den Karten, denn mit ihr
+       ändert sich deren ganze Einordnung. */
+    var vorschlag = vorschlagTonart(akkorde, ta);
+    if (vorschlag) { elErgebnis.appendChild(vorschlagZeile(vorschlag, akkorde)); }
 
     tokens.forEach(function (token, i) {
       var vorher = null;
@@ -1627,6 +1681,14 @@
     return 'dur';
   }
 
+  /* Wie die Tonleiter eine Stufe erwartet – in denselben Worten, die
+     tongeschlecht() für einen Akkordtyp liefert, damit sich beides
+     vergleichen lässt. */
+  function erwartetesGeschlecht(qualitaet) {
+    return qualitaet === 'dim' ? 'vermindert'
+         : qualitaet === 'min' ? 'moll' : 'dur';
+  }
+
   /* Die Stufe als römische Ziffer samt Zusatz: groß für Dur, klein für Moll
      und vermindert. Nur an einer Stelle geschrieben, damit das Abzeichen auf
      der Karte und die Bezeichnung in der Karte dieselbe Schreibweise haben. */
@@ -1662,7 +1724,7 @@
     }
 
     var erwartet = (ta.moll ? STUFEN_QUALITAET_MOLL : STUFEN_QUALITAET_DUR)[grad - 1];
-    var erwartetesGeschlecht = erwartet === 'dim' ? 'vermindert' : erwartet === 'min' ? 'moll' : 'dur';
+    var geschlechtErwartet = erwartetesGeschlecht(erwartet);
     var basis = (ta.moll ? FUNKTION_MOLL : FUNKTION_DUR)[grad - 1];
 
     if (!ta.moll && grad === 4 && geschlecht === 'moll') {
@@ -1677,7 +1739,7 @@
       return { grad: grad, rolle: 'dominante', name: 'Dominantsept auf der Tonika',
         text: 'zieht als Dur-Akkord mit kleiner Septime zur Subdominante – bluesig.' };
     }
-    if (!ta.moll && erwartetesGeschlecht !== 'dur' && geschlecht === 'dur') {
+    if (!ta.moll && geschlechtErwartet !== 'dur' && geschlecht === 'dur') {
       return { grad: grad, rolle: 'dominante', name: 'Zwischendominante',
         text: 'ein Dur-Akkord dort, wo die Tonart Moll erwartet – er deutet auf den nächsten hin.' };
     }
@@ -1693,7 +1755,7 @@
        Gestalt beschrieben. Passt die Gestalt nicht, gilt nur die Aufgabe –
        sonst behauptete die Karte etwas, was der Akkord gar nicht zeigt
        (Fm in G♭-Dur hat seinen Grundton durchaus). */
-    if (geschlecht !== erwartetesGeschlecht && basis.ohneGestalt) {
+    if (geschlecht !== geschlechtErwartet && basis.ohneGestalt) {
       return { grad: grad, rolle: basis.rolle,
         name: basis.ohneGestalt.name || basis.name,
         text: basis.ohneGestalt.text };
@@ -1907,6 +1969,65 @@
     }
 
     return liste;
+  }
+
+  /* ---------------------------------------------------------------
+     5e. Welche Tonart ist das?
+     --------------------------------------------------------------- */
+
+  /* Wie gut eine Tonart zu fertig getippten Akkorden passt. Gezählt wird,
+     was man hört: liegt der Grundton auf einer Stufe der Tonleiter, stimmt
+     das Tongeschlecht mit der leitereigenen Stufe überein, und steht die
+     Tonika am Anfang oder am Ende der Abfolge? Ein Akkord, dessen Grundton
+     gar nicht zur Tonart gehört, zieht die Tonart dagegen nach unten. */
+  function passung(akkorde, ta) {
+    var leitereigen = ta.moll ? STUFEN_QUALITAET_MOLL : STUFEN_QUALITAET_DUR;
+    var punkte = 0;
+
+    akkorde.forEach(function (akkord, i) {
+      var grad = stufeInTonart(akkord, ta);
+      if (!grad) { punkte -= 3; return; }
+
+      punkte += 2;
+      var geschlecht = tongeschlecht(akkord.typ);
+      var stimmt = geschlecht === erwartetesGeschlecht(leitereigen[grad - 1]);
+      if (stimmt) { punkte += 1; }
+
+      /* Die Tonika ist das Fundament der Tonart: steht sie vorn oder hinten,
+         ist die Sache so gut wie sicher. */
+      if (grad === 1 && stimmt && (i === 0 || i === akkorde.length - 1)) {
+        punkte += 2;
+      }
+    });
+
+    return punkte;
+  }
+
+  /* Die Tonart, die die getippten Akkorde am besten erklärt – und zwar nur,
+     wenn es überhaupt eine bessere gibt als die eingestellte: bei Stufen im
+     Feld gibt die Tonart ohnehin jeden Ton an, ein einzelner Akkord passt in
+     zu viele Tonarten, und was die eingestellte Tonart genauso gut erklärt,
+     soll sie auch bleiben. */
+  function vorschlagTonart(akkorde, ta) {
+    var fertige = [];
+
+    akkorde.forEach(function (akkord) {
+      if (akkord && akkord.alsStufe) { fertige = null; }
+    });
+    if (fertige === null) { return null; }
+
+    akkorde.forEach(function (akkord) { if (akkord) { fertige.push(akkord); } });
+    if (fertige.length < 2) { return null; }
+
+    var besterWert = passung(fertige, ta);
+    var beste = null;
+
+    TONARTEN.forEach(function (kandidat) {
+      var wert = passung(fertige, kandidat);
+      if (wert > besterWert) { besterWert = wert; beste = kandidat; }
+    });
+
+    return beste;
   }
 
   /* ---------------------------------------------------------------

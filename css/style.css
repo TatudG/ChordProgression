@@ -384,6 +384,34 @@ main {
   fill: none;
 }
 
+/* Vorschlag zur Tonart – steht als eigene Zeile über den Karten, weil mit
+   der Tonart die ganze Einordnung der Karten steht und fällt. Der orange
+   Strich links holt den Blick, ohne lauter zu sein als die Karten. */
+.vorschlag {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-left: 3px solid var(--akzent);
+  border-radius: var(--radius);
+}
+
+.vorschlag__satz {
+  margin: 0;
+  flex: 1 1 18rem;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.vorschlag__satz strong { font-weight: 700; }
+
+.vorschlag__knopf:hover { color: var(--ton); border-color: var(--ton); }
+
 .akkord {
   display: flex;
   flex-direction: column;
