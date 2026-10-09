@@ -751,7 +751,9 @@
 
      - Die Hand soll natürlich liegen. Wie weit zwei Finger auseinander
        liegen, richtet sich nach dem Tonabstand: Halbton und Ganzton einen
-       Finger weiter, die Terz zwei, ab der Quinte vier.
+       Finger weiter, die Terz zwei, ab der Quinte vier. Aus diesen
+       Wunschabständen kommt die Spanne des Griffs; verteilt wird sie nach den
+       wirklichen Tonabständen (siehe zielAbstaende).
      - Ein Ton, der schon im Akkord davor lag, soll seinen Finger behalten.
        Dafür werden alle möglichen Fingerfolgen durchgerechnet und benotet;
        ein liegen gebliebener Finger wiegt eine unbequeme Spreizung auf.
