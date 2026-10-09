@@ -68,12 +68,20 @@ Tonart, Progression, Schreibweise sowie Sept- und Gitarren-Umschalter landen in
 der Adresse (`?tonart=G-Dur&p=…&sept=1&griff=gitarre`) und im Browserspeicher.
 Ein kopierter Link stellt also genau denselben Zustand wieder her.
 
+**Vorzeichen der Tonart** – über den Karten steht, wie viele ♯ oder ♭ zur
+gewählten Tonart gehören, wie sie heißen und welche Tonart dieselben
+Vorzeichen hat (die „parallele" Moll- bzw. Dur-Tonart). Daneben steht
+dasselbe als Notenbild: Violinschlüssel mit den Vorzeichen auf ihren Linien.
+Beides zusammen hilft beim Nachvollziehen am Instrument – c-Moll hat die drei
+♭ von E♭-Dur und wird auf denselben Tönen gespielt.
+
 ## Aufbau
 
 ```
 index.html      die Seite
 css/style.css   das gesamte Design (Farben und Maße als CSS-Variablen)
-js/main.js      Musiktheorie, Eingabe-Parser, Tastatur- und Griff-Zeichnung
+js/main.js      Musiktheorie, Eingabe-Parser, Zeichnung von Tastatur,
+                Griffbild und Notenbild
 ```
 
 Kein Framework, kein Bundler, keine externen Schriften oder Bibliotheken.
@@ -91,6 +99,20 @@ Kein Framework, kein Bundler, keine externen Schriften oder Bibliotheken.
 - Die Klaviatur zeigt zwei Oktaven (C4–B5). Der Grundton ist orange, die
   übrigen Akkordtöne blau, der Basston grün; dieselben Töne eine Oktave
   höher blasser.
+
+### Wie die Vorzeichen entstehen
+
+- Die Anzahl kommt aus dem **Quintenzirkel**: von C aus sieben Schritte auf-
+  und abwärts, das ergibt für jeden Grundton die Zahl der ♯ bzw. ♭. Eine
+  Moll-Tonart hat die Vorzeichen der Dur-Tonart eine kleine Terz höher, also
+  c-Moll die drei ♭ von E♭-Dur.
+- Gesetzt werden sie in der festen Reihenfolge des Zirkels: ♯ in `F C G D A E B`,
+  ♭ in `B E A D G C F` – nie anders.
+- Schlüssel, Kreuze und Be im Notenbild sind **gezeichnet, nicht getippt**.
+  Die Seite lädt keine Notenschrift-Schriftart nach, und die Zeichen der
+  Systemschrift sehen auf jedem Gerät anders aus. Jedes Vorzeichen sitzt auf
+  der Linie, auf der es in echter Notation steht (F♯ auf der obersten Linie,
+  B♭ auf der Mittellinie).
 
 ### Wie die Gitarrengriffe entstehen
 

@@ -246,6 +246,199 @@
 
   function skalaVon(ta) { return ta.moll ? SKALA_MOLL : SKALA_DUR; }
 
+  /* ---------------------------------------------------------------
+     2b. Vorzeichen und verwandte Tonart
+     --------------------------------------------------------------- */
+
+  /* Anzahl der Vorzeichen je Dur-Grundton nach dem Quintenzirkel:
+     positiv = ♯, negativ = ♭. Index ist der Halbton (0 = C).
+     Eine Moll-Tonart hat die Vorzeichen der Dur-Tonart eine kleine Terz
+     höher – c-Moll also die drei ♭ von E♭-Dur. */
+  var VORZEICHEN_NACH_QUINTEN = [0, -5, 2, -3, 4, -1, -6, 1, -4, 3, -2, 5];
+
+  /* Reihenfolge, in der die Vorzeichen gesetzt werden */
+  var REIHE_KREUZ = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
+  var REIHE_FLACH = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
+
+  function vorzeichenVon(ta) {
+    var durGrundton = ta.moll ? (ta.grundton + 3) % 12 : ta.grundton;
+    var anzahl = VORZEICHEN_NACH_QUINTEN[durGrundton];
+    var namen = [];
+    var i;
+    if (anzahl > 0) {
+      for (i = 0; i < anzahl; i++) { namen.push(notenName(REIHE_KREUZ[i], 1)); }
+    } else {
+      for (i = 0; i < -anzahl; i++) { namen.push(notenName(REIHE_FLACH[i], -1)); }
+    }
+    return { anzahl: anzahl, namen: namen };
+  }
+
+  /* Die Tonart mit denselben Vorzeichen: zu einer Dur-Tonart die Moll-Tonart
+     eine kleine Terz tiefer, zu einer Moll-Tonart die Dur-Tonart eine kleine
+     Terz höher. */
+  function verwandteTonart(ta) {
+    var zielGrundton = (ta.moll ? ta.grundton + 3 : ta.grundton + 9) % 12;
+    for (var i = 0; i < TONARTEN.length; i++) {
+      if (TONARTEN[i].moll !== ta.moll && TONARTEN[i].grundton === zielGrundton) {
+        return TONARTEN[i];
+      }
+    }
+    return null;
+  }
+
+  /* "3 ♭ (B♭ E♭ A♭) · gleiche Vorzeichen wie E♭-Dur" */
+  function vorzeichenSatz(ta) {
+    var vorzeichen = vorzeichenVon(ta);
+    var text = vorzeichen.anzahl === 0
+      ? 'keine Vorzeichen'
+      : Math.abs(vorzeichen.anzahl) + ' ' + (vorzeichen.anzahl > 0 ? '♯' : '♭') +
+        ' (' + vorzeichen.namen.join(' ') + ')';
+
+    var partner = verwandteTonart(ta);
+    if (partner) { text += ' · gleiche Vorzeichen wie ' + tonartLabel(partner); }
+    return text;
+  }
+
+  /* ---------------------------------------------------------------
+     2c. Dieselben Vorzeichen als Notenbild
+     --------------------------------------------------------------- */
+
+  /* Schlüssel, Kreuze und Be sind gezeichnet statt getippt: die Seite lädt
+     keine Schriftart nach, und die Zeichen der Systemschrift sehen auf jedem
+     Gerät anders aus. Alle Maße sind Vielfache von S, dem Abstand zweier
+     Notenlinien – so stimmt das Bild in jeder Größe. Ausgangspunkt ist die
+     G-Linie des Violinschlüssels (zweite Linie von unten), y zeigt nach
+     unten.
+
+     Lage eines Vorzeichens: 0 = unterste Linie, 1 = erster Zwischenraum,
+     2 = zweite Linie und so weiter. Die Reihenfolge ist die des
+     Quintenzirkels, die Lagen sind die des Violinschlüssels – F♯ sitzt auf
+     der obersten Linie, B♭ auf der Mittellinie. */
+  var LAGE_KREUZ = [8, 5, 9, 6, 3, 7, 4];
+  var LAGE_FLACH = [4, 7, 3, 6, 1, 5, 8];
+
+  /* Violinschlüssel: ein kräftiger Stiel mit Fuß und eine feinere Schleife,
+     die oben umklappt und unten die G-Linie umschließt. */
+  function schluesselZeichnung(x0, yG, S) {
+    function X(u) { return (x0 + u * S).toFixed(1); }
+    function Y(v) { return (yG + v * S).toFixed(1); }
+    var gruppe = svgElement('g', {
+      fill: 'none', stroke: 'currentColor', 'stroke-linecap': 'round'
+    });
+
+    gruppe.appendChild(svgElement('path', {
+      d: 'M ' + X(0) + ' ' + Y(-2.6) +
+         ' C ' + X(-0.08) + ' ' + Y(-1.2) + ' ' + X(-0.08) + ' ' + Y(0.6) +
+         ' ' + X(-0.08) + ' ' + Y(1.75) +
+         ' C ' + X(-0.08) + ' ' + Y(2.2) + ' ' + X(-0.45) + ' ' + Y(2.45) +
+         ' ' + X(-0.75) + ' ' + Y(2.3),
+      'stroke-width': 0.46 * S
+    }));
+
+    gruppe.appendChild(svgElement('path', {
+      d: 'M ' + X(0) + ' ' + Y(-2.6) +
+         ' C ' + X(-0.6) + ' ' + Y(-2.85) + ' ' + X(-0.95) + ' ' + Y(-3.25) +
+         ' ' + X(-0.7) + ' ' + Y(-3.6) +
+         ' C ' + X(-0.45) + ' ' + Y(-3.95) + ' ' + X(0.2) + ' ' + Y(-4.0) +
+         ' ' + X(0.65) + ' ' + Y(-3.55) +
+         ' C ' + X(1.05) + ' ' + Y(-3.1) + ' ' + X(1.0) + ' ' + Y(-2.35) +
+         ' ' + X(0.6) + ' ' + Y(-1.7) +
+         ' C ' + X(0.2) + ' ' + Y(-1.05) + ' ' + X(-0.35) + ' ' + Y(-0.75) +
+         ' ' + X(-0.55) + ' ' + Y(0.0) +
+         ' C ' + X(-0.7) + ' ' + Y(0.42) + ' ' + X(-0.3) + ' ' + Y(0.85) +
+         ' ' + X(0.2) + ' ' + Y(0.72) +
+         ' C ' + X(0.76) + ' ' + Y(0.58) + ' ' + X(0.95) + ' ' + Y(-0.05) +
+         ' ' + X(0.55) + ' ' + Y(-0.55) +
+         ' C ' + X(0.25) + ' ' + Y(-0.92) + ' ' + X(-0.25) + ' ' + Y(-0.88) +
+         ' ' + X(-0.4) + ' ' + Y(-0.5),
+      'stroke-width': 0.3 * S
+    }));
+
+    return gruppe;
+  }
+
+  /* Kreuz: zwei parallele Senkrechte, zwei Querbalken, die nach rechts oben
+     laufen. */
+  function kreuzZeichnung(x, y, S) {
+    var h = 1.12 * S, b = 0.42 * S;
+    var gruppe = svgElement('g', {
+      fill: 'none', stroke: 'currentColor', 'stroke-linecap': 'round',
+      'stroke-width': 0.15 * S
+    });
+    [[-0.15, -0.2], [0.19, 0.14]].forEach(function (paar) {
+      gruppe.appendChild(svgElement('line', {
+        x1: x + paar[0] * S, y1: y - h, x2: x + paar[1] * S, y2: y + h
+      }));
+    });
+    [[0.28, -0.04], [0.68, 0.36]].forEach(function (balken) {
+      gruppe.appendChild(svgElement('line', {
+        x1: x - b, y1: y + balken[0] * S, x2: x + b, y2: y + balken[1] * S
+      }));
+    });
+    return gruppe;
+  }
+
+  /* Be: ein Stiel, an dem unten ein gefüllter Bauch hängt. */
+  function beZeichnung(x, y, S) {
+    var gruppe = svgElement('g', { stroke: 'currentColor', 'stroke-linecap': 'round' });
+    var stiel = x - 0.3 * S, unten = y + 0.78 * S;
+    gruppe.appendChild(svgElement('line', {
+      x1: stiel, y1: y - 1.32 * S, x2: stiel, y2: unten, 'stroke-width': 0.15 * S
+    }));
+    gruppe.appendChild(svgElement('path', {
+      d: 'M ' + stiel + ' ' + unten +
+         ' C ' + (x + 0.42 * S) + ' ' + (y + 0.86 * S) + ' ' + (x + 0.78 * S) + ' ' + (y + 0.28 * S) +
+         ' ' + (x + 0.66 * S) + ' ' + (y - 0.18 * S) +
+         ' C ' + (x + 0.56 * S) + ' ' + (y - 0.52 * S) + ' ' + (x + 0.1 * S) + ' ' + (y - 0.42 * S) +
+         ' ' + (x - 0.08 * S) + ' ' + (y - 0.05 * S) + ' Z',
+      fill: 'currentColor'
+    }));
+    return gruppe;
+  }
+
+  function vorzeichenBild(ta) {
+    var vorzeichen = vorzeichenVon(ta);
+    var anzahl = Math.abs(vorzeichen.anzahl);
+    var S = 10;                       /* Abstand der Notenlinien im Bild */
+    var links = 2.2 * S;              /* Platz für den Schlüssel davor */
+    var erste = links + 1.75 * S;     /* erstes Vorzeichen hinter dem Schlüssel */
+    var schritt = 1.2 * S;
+    var oben = 4.6 * S;               /* Rand über der obersten Linie */
+    var boden = oben + 4 * S;         /* unterste Linie */
+    var breite = erste + anzahl * schritt + 1.1 * S;
+    var hoehe = oben + 4 * S + 1.8 * S;
+
+    var svg = svgElement('svg', {
+      viewBox: '0 0 ' + breite.toFixed(1) + ' ' + hoehe.toFixed(1),
+      'class': 'notenbild',
+      role: 'img',
+      'aria-label': 'Notenbild: Violinschlüssel ' + (anzahl === 0
+        ? 'ohne Vorzeichen'
+        : 'mit ' + anzahl + ' Vorzeichen (' + vorzeichen.namen.join(' ') + ')')
+    });
+
+    for (var i = 0; i < 5; i++) {
+      svg.appendChild(svgElement('line', {
+        x1: 0, y1: oben + i * S, x2: breite.toFixed(1), y2: oben + i * S,
+        stroke: 'currentColor', 'stroke-width': 0.12 * S
+      }));
+    }
+
+    svg.appendChild(schluesselZeichnung(links, oben + 2 * S, S));
+
+    var lagen = vorzeichen.anzahl > 0 ? LAGE_KREUZ : LAGE_FLACH;
+    var zeichne = vorzeichen.anzahl > 0 ? kreuzZeichnung : beZeichnung;
+    for (i = 0; i < anzahl; i++) {
+      svg.appendChild(zeichne(
+        erste + i * schritt,
+        boden - lagen[i] * S / 2,
+        S
+      ));
+    }
+
+    return svg;
+  }
+
   function leitereigenerTyp(index, ta) {
     return (ta.moll ? STUFEN_QUALITAET_MOLL : STUFEN_QUALITAET_DUR)[index];
   }
@@ -1044,6 +1237,16 @@
       ' · ' + elProgression.value.trim()
     ));
     elErgebnis.appendChild(kopf);
+
+    /* Vorzeichen der Tonart – der Quintenzirkel zum Nachlesen, als Text
+       und als Notenbild. */
+    var vorzeichenZeile = document.createElement('p');
+    vorzeichenZeile.className = 'ergebnis__vorzeichen';
+    vorzeichenZeile.appendChild(vorzeichenBild(ta));
+    var vorzeichenText = document.createElement('span');
+    vorzeichenText.textContent = vorzeichenSatz(ta);
+    vorzeichenZeile.appendChild(vorzeichenText);
+    elErgebnis.appendChild(vorzeichenZeile);
 
     tokens.forEach(function (token) {
       elErgebnis.appendChild(karte(token, ta));

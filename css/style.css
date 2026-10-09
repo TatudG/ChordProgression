@@ -201,6 +201,29 @@ main {
 
 .ergebnis__kopf strong { color: var(--text); }
 
+/* Vorzeichenzeile: gehört zur Zusammenfassung darüber, deshalb der negative
+   Abstand gegen die Rasterlücke. Notenbild links, Text daneben. */
+.ergebnis__vorzeichen {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+  margin: -0.55rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text-leise);
+}
+
+/* Notenschlüssel mit den Vorzeichen der Tonart. Die Höhe ist fest, die
+   Breite ergibt sich aus dem Seitenverhältnis des Bildes – so bleiben alle
+   Tonarten gleich hoch, obwohl eine mit sieben Vorzeichen breiter ist. */
+.notenbild {
+  flex: none;
+  height: clamp(62px, 9vw, 84px);
+  width: auto;
+  color: var(--text);
+}
+
 .akkord {
   display: flex;
   flex-direction: column;
