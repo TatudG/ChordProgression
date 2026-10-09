@@ -2,8 +2,8 @@
 
 Eine einzelne Webseite: Tonart wählen, Progression eingeben – jeder Akkord wird
 mit Name, Tönen und Klaviertastatur angezeigt, auf Wunsch stattdessen mit
-Gitarrengriff. Läuft auf Rechner und Handy, braucht keinen Server und keine
-Internetverbindung.
+Gitarrengriff, und lässt sich auf Klick anhören. Läuft auf Rechner und Handy,
+braucht keinen Server und keine Internetverbindung.
 
 ## Öffnen
 
@@ -55,8 +55,10 @@ setzen die Auswahl auf „eigene Eingabe" zurück.
 
 **Akkorde zusammenstellen** – der Knopf unter dem Vorlagenfeld baut eine
 Abfolge aus zwei Auswahlfeldern statt aus getipptem Text. **Ton** bietet die
-zwölf Töne in der Schreibweise der Tonart – in G♭-Dur also G♭, in E-Dur F♯ –
-und darunter die andere Schreibweise derselben Töne. **Art** bietet 31
+zwölf Töne, jeder mit beiden Namen in einem Eintrag: `C♯/D♭`, `D♯/E♭`,
+`F♯/G♭`, `G♯/A♭`, `A♯/B♭`. Vorn steht die Schreibweise der Tonart – in
+G♭-Dur also `D♭/C♯` –, und gebaut wird der Akkord in dieser Schreibweise:
+in C-Dur wird aus `D♯/E♭` ein D♯m, in G♭-Dur ein D♭m. **Art** bietet 31
 Akkordtypen in fünf Gruppen, von Dur und Moll über Septakkorde und
 Sus-Vorhalte bis zu den Alterationen. „Hinzufügen" hängt den Akkord an die
 nummerierte Reihe darunter; das × an einem Plättchen, „↶ Zurück" und „Leeren"
@@ -114,6 +116,16 @@ weiterbearbeiten lässt. Angeboten werden je nach Abfolge: *Trugschluss*,
 *Offen enden*, *Moll-Subdominante*, *Zwischendominante* und *Durchgang im Bass*.
 Passt nichts davon, bleibt der Abschnitt verborgen.
 
+**Anhören** – unter jeder Karte steht ein Knopf *▶ Anhören*; er spielt den
+Akkord so, wie er dasteht: die Töne von unten nach oben, beim Slash-Akkord mit
+dem Basston zuunterst. Für das Gehör lässt sich so nachvollziehen, wie eine
+Stufe in der Tonart klingt, und der Unterschied zwischen zwei Karten ist
+unmittelbar zu hören. Der Klang entsteht im Browser (Web Audio), es wird nichts
+nachgeladen. **Nur auf Klick**: beim Laden der Seite und beim Tippen erklingt
+nichts – der Browser gibt Ton ohnehin erst nach einer Nutzerhandlung heraus.
+Ein zweiter Klick löst den ersten Klang ab, statt beide übereinander zu legen.
+Unerkannte Karten haben keinen Knopf, weil es dort nichts zu hören gibt.
+
 Tonart, Progression, Schreibweise sowie Sept- und Gitarren-Umschalter landen in
 der Adresse (`?tonart=G-Dur&p=…&sept=1&griff=gitarre`) und im Browserspeicher.
 Ein kopierter Link stellt also genau denselben Zustand wieder her.
@@ -131,7 +143,8 @@ Beides zusammen hilft beim Nachvollziehen am Instrument – c-Moll hat die drei
 index.html      die Seite
 css/style.css   das gesamte Design (Farben und Maße als CSS-Variablen)
 js/main.js      Musiktheorie, Eingabe-Parser, Funktionsbestimmung, Ideen zum
-                Variieren, Zeichnung von Tastatur, Griffbild und Notenbild
+                Variieren, Anhören der Akkorde, Zeichnung von Tastatur,
+                Griffbild und Notenbild
 ```
 
 Kein Framework, kein Bundler, keine externen Schriften oder Bibliotheken –
@@ -235,6 +248,18 @@ verschwinden.
   Der Umriss ist so gezeichnet, dass die *Mitte des Bauchs* auf der
   Notenposition liegt – genau wie bei einem Notenkopf.
 
+### Wie der Klang entsteht
+
+- Die Töne des Akkords werden von unten nach oben gestapelt: der Grundton
+  beginnt bei C3, jeder weitere Ton liegt über dem vorigen. Ein Basston, der
+  ohnehin zum Akkord gehört, rückt nach unten – `C/E` klingt also in der ersten
+  Umkehrung. Ein Basston, der nicht zum Akkord gehört (`C/B`), kommt als
+  tiefster Ton dazu.
+- Jeder Ton ist ein Dreieck-Oszillator mit einer Hüllkurve: in 15 ms auf
+  Lautstärke, dann rund zwei Sekunden ausklingend. Die Lautstärke wird durch
+  die Zahl der Töne geteilt, damit ein Siebenklang nicht lauter ist als ein
+  Dreiklang.
+
 ### Wie die Gitarrengriffe entstehen
 
 - Für die 24 Dur- und Moll-Dreiklänge stehen die gängigen Griffbilder fest in
@@ -268,8 +293,6 @@ nicht ins Netz.
 
 ## Mögliche Erweiterungen
 
-- Akkorde per Web Audio anspielen (kein Zusatzpaket nötig) – auch als
-  Hörprobe der Basslinie bei Slash-Akkorden
 - Größerer Tastaturumfang mit horizontalem Scrollen
 - Umkehrungen auf der Tastatur tatsächlich in der richtigen Lage zeigen,
   statt nur den Basston zu markieren

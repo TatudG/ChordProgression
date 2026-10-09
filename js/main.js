@@ -1332,6 +1332,11 @@
       }
     }
 
+    /* Zum Schluss der Hör-Knopf: fürs Gehör bildet man sich den Klang leichter
+       nach, als man ihn aus den Tonnamen liest. Er steht in jeder Karte und
+       bleibt unten stehen, auch wenn das Griffbild kürzer ist. */
+    box.appendChild(hoerKnopf(akkord));
+
     return box;
   }
 
@@ -1484,35 +1489,28 @@
     return { roh: token };
   }
 
+  /* Die zwölf Töne, jeder mit beiden Namen: D♯/E♭. Der Name der Tonart steht
+     vorn – in G♭-Dur also D♭/C♯ – und der Wert bleibt dieser Name, damit der
+     Akkord in der Schreibweise der Tonart entsteht. */
   function fuelleBauToene() {
     var ta = holeTonart(elTonart.value);
     var passt = ta.be ? BAU_TON_FLACH : BAU_TON_KREUZ;
     var anders = ta.be ? BAU_TON_KREUZ : BAU_TON_FLACH;
     var vorher = elBauTon.value;
-    var doppelt = [];
-    var i;
-
-    function gruppe(titel, liste) {
-      var optgroup = document.createElement('optgroup');
-      optgroup.label = titel;
-      liste.forEach(function (eintrag) {
-        var opt = document.createElement('option');
-        opt.value = eintrag[0] + '|' + eintrag[1];
-        opt.textContent = notenName(eintrag[0], eintrag[1]);
-        optgroup.appendChild(opt);
-      });
-      elBauTon.appendChild(optgroup);
-    }
-
-    /* Nur die fünf Töne mit zwei Namen stehen doppelt: dieselbe Taste,
-       anderer Name. */
-    for (i = 0; i < anders.length; i++) {
-      if (anders[i][0] !== passt[i][0]) { doppelt.push(anders[i]); }
-    }
 
     elBauTon.textContent = '';
-    gruppe('Töne', passt);
-    if (doppelt.length) { gruppe('andere Schreibweise', doppelt); }
+
+    passt.forEach(function (eintrag, i) {
+      var opt = document.createElement('option');
+      opt.value = eintrag[0] + '|' + eintrag[1];
+
+      var name = notenName(eintrag[0], eintrag[1]);
+      if (anders[i][0] !== eintrag[0]) {
+        name += '/' + notenName(anders[i][0], anders[i][1]);
+      }
+      opt.textContent = name;
+      elBauTon.appendChild(opt);
+    });
 
     elBauTon.value = vorher || 'C|0';
     if (elBauTon.selectedIndex === -1) { elBauTon.value = 'C|0'; }
@@ -2028,6 +2026,108 @@
     });
 
     return beste;
+  }
+
+  /* ---------------------------------------------------------------
+     5f. Den Akkord anhören
+     --------------------------------------------------------------- */
+
+  var BASIS_TON = 48;        /* C3 – tief genug, dass auch ein Siebenklang sitzt */
+  var klang = null;          /* AudioContext, entsteht erst beim ersten Hören */
+  var laufendeToene = [];    /* was gerade klingt, damit ein Klick es ablöst */
+
+  /* Ton gibt der Browser erst nach einer Nutzerhandlung heraus. Deshalb
+     entsteht der AudioContext erst beim Klick auf einen Hör-Knopf – beim
+     Laden der Seite und beim Tippen erklingt nichts. */
+  function klangKontext() {
+    if (!window.AudioContext) { return null; }
+    if (!klang) { klang = new window.AudioContext(); }
+    if (klang.state === 'suspended' && klang.resume) { klang.resume(); }
+    return klang;
+  }
+
+  /* Die Akkordtöne als aufsteigende Folge von MIDI-Nummern. Ein Basston
+     kommt nach unten (C/E klingt damit in der ersten Umkehrung), sonst
+     beginnt der Akkord beim Grundton. */
+  function stimmeVon(akkord) {
+    var folge = akkord.pcs.filter(function (pc) { return pc !== akkord.bassPc; });
+    if (akkord.bassPc !== null) { folge.unshift(akkord.bassPc); }
+
+    var toene = [];
+    var letzte = null;
+    folge.forEach(function (pc) {
+      var midi = BASIS_TON + pc;
+      while (letzte !== null && midi <= letzte) { midi += 12; }
+      toene.push(midi);
+      letzte = midi;
+    });
+    return toene;
+  }
+
+  /* Einen neuen Klick mit dem alten Klang überlagern wäre ein Klumpen –
+     deshalb verstummt erst, was noch klingt. */
+  function stoppeKlang() {
+    if (!klang) { return; }
+    var jetzt = klang.currentTime;
+    laufendeToene.forEach(function (stimme) {
+      try {
+        stimme.lautstaerke.gain.cancelScheduledValues(jetzt);
+        stimme.lautstaerke.gain.setValueAtTime(stimme.lautstaerke.gain.value, jetzt);
+        stimme.lautstaerke.gain.linearRampToValueAtTime(0, jetzt + 0.06);
+        stimme.ton.stop(jetzt + 0.07);
+      } catch (e) { /* schon verklungen */ }
+    });
+    laufendeToene = [];
+  }
+
+  /* Ein weicher Ton je Akkordton: kurz angeschlagen, dann ausklingend. So
+     hört man die Zusammenklänge und nicht die Obertöne. */
+  function spieleAkkord(akkord) {
+    var ctx = klangKontext();
+    if (!ctx) { return; }
+
+    stoppeKlang();
+
+    var toene = stimmeVon(akkord);
+    var jetzt = ctx.currentTime + 0.02;
+    /* Ein Siebenklang soll nicht lauter sein als ein Dreiklang. */
+    var laut = 0.22 / Math.sqrt(toene.length);
+
+    toene.forEach(function (midi) {
+      var ton = ctx.createOscillator();
+      ton.type = 'triangle';
+      ton.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
+
+      var lautstaerke = ctx.createGain();
+      lautstaerke.gain.setValueAtTime(0.0001, jetzt);
+      lautstaerke.gain.linearRampToValueAtTime(laut, jetzt + 0.015);
+      lautstaerke.gain.exponentialRampToValueAtTime(0.0001, jetzt + 1.9);
+
+      ton.connect(lautstaerke);
+      lautstaerke.connect(ctx.destination);
+      ton.start(jetzt);
+      ton.stop(jetzt + 2);
+
+      laufendeToene.push({ ton: ton, lautstaerke: lautstaerke });
+    });
+  }
+
+  /* Der Knopf unter dem Akkord. Er spielt nur, wenn man ihn drückt; das
+     kurze Aufleuchten zeigt, dass etwas erklingt. */
+  function hoerKnopf(akkord) {
+    var knopf = document.createElement('button');
+    knopf.type = 'button';
+    knopf.className = 'knopf akkord__hoeren';
+    knopf.textContent = '▶ Anhören';
+    knopf.setAttribute('aria-label', akkord.symbol + ' anhören');
+
+    knopf.addEventListener('click', function () {
+      spieleAkkord(akkord);
+      knopf.classList.add('is-klingt');
+      window.setTimeout(function () { knopf.classList.remove('is-klingt'); }, 600);
+    });
+
+    return knopf;
   }
 
   /* ---------------------------------------------------------------

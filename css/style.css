@@ -486,6 +486,24 @@ main {
 
 .akkord__schritt strong { color: var(--text); font-weight: 700; }
 
+/* Hör-Knopf: steht am Fuß jeder Karte. margin-top:auto schiebt ihn nach unten,
+   sodass er in allen Karten auf einer Höhe liegt – auch neben einem Griffbild,
+   das kürzer ist als eine Tastatur. */
+.akkord__hoeren {
+  margin-top: auto;
+  align-self: flex-start;
+  font-variant-numeric: tabular-nums;
+}
+
+.akkord__hoeren:hover { color: var(--ton); border-color: var(--ton); }
+
+/* Solange der Ton klingt, zeigt der Knopf, dass er gerade spielt. */
+.akkord__hoeren.is-klingt {
+  color: var(--akzent);
+  border-color: var(--akzent);
+  background: var(--akzent-hell);
+}
+
 /* Fehlerkarte */
 .akkord--fehler .akkord__name { font-size: 1.2rem; }
 .akkord--fehler { border-style: dashed; border-color: var(--akzent); }
