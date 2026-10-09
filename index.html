@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Akkord-Progressionen – Tonart wählen, Akkorde sehen</title>
-<meta name="description" content="Wähle eine Tonart und eine Akkordprogression (z.B. I–V–vi–IV) und sieh jeden Akkord mit Name, Tönen, Funktion und Klaviertastatur oder Gitarrengriff – dazu Ideen, die Abfolge zu variieren.">
+<meta name="description" content="Wähle eine Tonart und eine Akkordprogression (z.B. I–V–vi–IV) und sieh jeden Akkord mit Name, Tönen, Funktion und Klaviertastatur oder Gitarrengriff – zum Anhören auf Klick, dazu Ideen, die Abfolge zu variieren.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23191a1f'/%3E%3Cg fill='%23ffffff'%3E%3Crect x='5' y='8' width='5' height='16'/%3E%3Crect x='11' y='8' width='5' height='16'/%3E%3Crect x='17' y='8' width='5' height='16'/%3E%3Crect x='23' y='8' width='5' height='16'/%3E%3C/g%3E%3Cg fill='%23191a1f'%3E%3Crect x='8.5' y='8' width='3' height='10'/%3E%3Crect x='20.5' y='8' width='3' height='10'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -12,7 +12,7 @@
 
 <header class="kopf">
   <h1>Akkord-Progressionen</h1>
-  <p class="kopf__unter">Tonart wählen, Progression eingeben – jeder Akkord wird mit Name, Tönen, seiner Aufgabe in der Tonart und Klaviertastatur angezeigt, auf Wunsch stattdessen mit Gitarrengriff.</p>
+  <p class="kopf__unter">Tonart wählen, Progression eingeben – jeder Akkord wird mit Name, Tönen, seiner Aufgabe in der Tonart und Klaviertastatur angezeigt, auf Wunsch stattdessen mit Gitarrengriff, und auf Klick lässt er sich anhören.</p>
 </header>
 
 <main id="inhalt">
@@ -80,6 +80,11 @@
       <label class="schalter" for="notennamen">
         <input type="checkbox" id="notennamen">
         <span>Deutsche Notennamen</span>
+      </label>
+
+      <label class="schalter" for="hoeren">
+        <input type="checkbox" id="hoeren">
+        <span>Anhören-Knöpfe</span>
       </label>
     </div>
   </form>

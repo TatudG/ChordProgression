@@ -132,6 +132,9 @@
   var notenStil = 'international';
   var septAkkorde = false;
   var griffModus = false;
+  /* Die Hör-Knöpfe stehen anfangs auf jeder Karte; wer sie nicht braucht,
+     blendet sie aus. */
+  var hoerKnoepfe = true;
 
   function notenName(buchstabe, vorzeichen) {
     if (notenStil === 'deutsch' && buchstabe === 'B') {
@@ -1124,6 +1127,7 @@
   var elNotennamen = document.getElementById('notennamen');
   var elSept = document.getElementById('septakkorde');
   var elGitarre = document.getElementById('gitarre');
+  var elHoeren = document.getElementById('hoeren');
   var elLegendeKlavier = document.getElementById('legende-klavier');
   var elLegendeGitarre = document.getElementById('legende-gitarre');
   var elBau = document.getElementById('bau');
@@ -1334,8 +1338,9 @@
 
     /* Zum Schluss der Hör-Knopf: fürs Gehör bildet man sich den Klang leichter
        nach, als man ihn aus den Tonnamen liest. Er steht in jeder Karte und
-       bleibt unten stehen, auch wenn das Griffbild kürzer ist. */
-    box.appendChild(hoerKnopf(akkord));
+       bleibt unten stehen, auch wenn das Griffbild kürzer ist. Wer ihn nicht
+       braucht, blendet ihn mit dem Schalter aus. */
+    if (hoerKnoepfe) { box.appendChild(hoerKnopf(akkord)); }
 
     return box;
   }
@@ -2140,7 +2145,7 @@
     try {
       window.localStorage.setItem(SPEICHER, JSON.stringify({
         tonart: ta.id, progression: progression, noten: notenStil,
-        sept: septAkkorde, griff: griffModus
+        sept: septAkkorde, griff: griffModus, hoeren: hoerKnoepfe
       }));
     } catch (e) { /* privater Modus o. Ä. – dann eben nicht */ }
 
@@ -2150,7 +2155,8 @@
                 '&p=' + encodeURIComponent(progression.trim()) +
                 (notenStil === 'deutsch' ? '&noten=deutsch' : '') +
                 (septAkkorde ? '&sept=1' : '') +
-                (griffModus ? '&griff=gitarre' : '');
+                (griffModus ? '&griff=gitarre' : '') +
+                (hoerKnoepfe ? '' : '&hoeren=0');
       window.history.replaceState(null, '', neu);
     } catch (e) { /* bei file:// nicht überall erlaubt */ }
   }
@@ -2160,10 +2166,12 @@
       var p = new URLSearchParams(window.location.search);
       return {
         tonart: p.get('tonart'), progression: p.get('p'),
-        noten: p.get('noten'), sept: p.get('sept'), griff: p.get('griff')
+        noten: p.get('noten'), sept: p.get('sept'), griff: p.get('griff'),
+        hoeren: p.get('hoeren')
       };
     } catch (e) {
-      return { tonart: null, progression: null, noten: null, sept: null, griff: null };
+      return { tonart: null, progression: null, noten: null, sept: null,
+               griff: null, hoeren: null };
     }
   }
 
@@ -2252,6 +2260,13 @@
   }
   elGitarre.checked = griffModus;
 
+  /* Die Hör-Knöpfe sind angeknipst, solange nichts anderes gesagt wurde –
+     deshalb steht in Adresse und Speicher nur, wenn sie ausgeblendet sind. */
+  if (ausAdresse.hoeren === '0' || (!ausAdresse.hoeren && gemerkt && gemerkt.hoeren === false)) {
+    hoerKnoepfe = false;
+  }
+  elHoeren.checked = hoerKnoepfe;
+
   fuelleTonarten();
   fuelleVorlagen();
 
@@ -2314,6 +2329,14 @@
   elGitarre.addEventListener('change', function () {
     griffModus = elGitarre.checked;
     zeigeLegende();
+    zeichne();
+  });
+
+  elHoeren.addEventListener('change', function () {
+    hoerKnoepfe = elHoeren.checked;
+    /* Verschwindet der Knopf, während sein Ton klingt, soll er auch
+       verstummen – sonst hätte man Klang ohne sichtbare Ursache. */
+    if (!hoerKnoepfe) { stoppeKlang(); }
     zeichne();
   });
 

@@ -126,9 +126,15 @@ nichts – der Browser gibt Ton ohnehin erst nach einer Nutzerhandlung heraus.
 Ein zweiter Klick löst den ersten Klang ab, statt beide übereinander zu legen.
 Unerkannte Karten haben keinen Knopf, weil es dort nichts zu hören gibt.
 
-Tonart, Progression, Schreibweise sowie Sept- und Gitarren-Umschalter landen in
-der Adresse (`?tonart=G-Dur&p=…&sept=1&griff=gitarre`) und im Browserspeicher.
-Ein kopierter Link stellt also genau denselben Zustand wieder her.
+**Anhören-Knöpfe** – der vierte Schalter neben den Notennamen blendet die
+Hör-Knöpfe aus und wieder ein. Von Anfang an stehen sie auf jeder Karte; wer
+sie nicht braucht, macht damit die Karten wieder so ruhig wie vorher. Beim
+Ausblenden verstummt ein noch klingender Ton.
+
+Tonart, Progression, Schreibweise sowie Sept-, Gitarren- und Anhören-Schalter
+landen in der Adresse (`?tonart=G-Dur&p=…&sept=1&griff=gitarre`, beim
+Ausblenden `&hoeren=0`) und im Browserspeicher. Ein kopierter Link stellt also
+genau denselben Zustand wieder her.
 
 **Vorzeichen der Tonart** – über den Karten steht, wie viele ♯ oder ♭ zur
 gewählten Tonart gehören, wie sie heißen und welche Tonart dieselben
