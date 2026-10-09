@@ -629,8 +629,7 @@
 
     var stufe = '';
     if (rohdaten.stufe) {
-      var numeral = ROEMISCH[rohdaten.stufe - 1];
-      stufe = (info.klein ? numeral.toLowerCase() : numeral) + info.stufeSuffix;
+      stufe = stufenZeichen(rohdaten.stufe, rohdaten.typ);
     }
 
     /* Vorzeichen der Tonart nur, wo der Akkord selbst keins vorgibt */
@@ -666,6 +665,11 @@
 
     return {
       stufe: stufe,
+      /* Buchstabe und Vorzeichen des Grundtons werden mitgegeben: für die
+         Funktionsbestimmung und die Vorschläge wird der Akkord von dort aus
+         weitergedacht (Quinte hoch, Stufe darüber …). */
+      buchstabe: rohdaten.buchstabe,
+      vorzeichen: rohdaten.vorzeichen,
       symbol: symbol,
       toene: toene,
       pcs: pcs,
@@ -1128,6 +1132,53 @@
   var elBauZurueck = document.getElementById('bau-zurueck');
   var elBauAlles = document.getElementById('bau-alles');
   var elBauFertig = document.getElementById('bau-fertig');
+  var elIdeen = document.getElementById('ideen');
+  var elIdeenListe = document.getElementById('ideen-liste');
+
+  /* Die Vorschläge unter den Karten. Jeder Knopf trägt die fertige Abfolge
+     für die gewählte Tonart – ein Klick übernimmt sie ins Eingabefeld, wo
+     sich alles weiterbearbeiten lässt. */
+  function zeigeIdeen(akkorde, tokens, ta) {
+    elIdeenListe.textContent = '';
+
+    var ideen = ideenFuer(akkorde, tokens, ta);
+    elIdeen.hidden = ideen.length === 0;
+
+    ideen.forEach(function (idee) {
+      var punkt = document.createElement('li');
+      punkt.className = 'idee';
+
+      var text = document.createElement('div');
+      text.className = 'idee__text';
+
+      var name = document.createElement('p');
+      name.className = 'idee__name';
+      name.textContent = idee.name;
+      text.appendChild(name);
+
+      var satz = document.createElement('p');
+      satz.className = 'idee__satz';
+      satz.textContent = idee.satz;
+      text.appendChild(satz);
+      punkt.appendChild(text);
+
+      var knopf = document.createElement('button');
+      knopf.type = 'button';
+      knopf.className = 'knopf idee__knopf';
+      knopf.textContent = idee.folge;
+      knopf.addEventListener('click', function () { uebernimmIdee(idee.folge); });
+      punkt.appendChild(knopf);
+
+      elIdeenListe.appendChild(punkt);
+    });
+  }
+
+  function uebernimmIdee(folge) {
+    schliesseBau();
+    elProgression.value = folge;
+    setzeVorlage(folge);        /* eine Idee ist keine Vorlage */
+    zeichne();
+  }
 
   /* Die Legende erklärt die Farben – und die sind in beiden Ansichten
      dieselben, nur die vierte Zeile gilt bloß fürs Klavier. */
@@ -1157,11 +1208,22 @@
     }).join(' ');
   }
 
-  function karte(token, ta) {
-    var box = document.createElement('article');
-    var rohdaten = parseToken(token, ta);
+  /* Eine Absatzzeile zur Einordnung – Funktionsname fett, Erklärung dahinter */
+  function einordnung(klasse, name, text, zeichen) {
+    var absatz = document.createElement('p');
+    absatz.className = klasse;
+    if (zeichen) { absatz.appendChild(document.createTextNode(zeichen + ' ')); }
+    var fett = document.createElement('strong');
+    fett.textContent = name;
+    absatz.appendChild(fett);
+    absatz.appendChild(document.createTextNode(' – ' + text));
+    return absatz;
+  }
 
-    if (!rohdaten) {
+  function karte(token, akkord, vorher, istLetzter) {
+    var box = document.createElement('article');
+
+    if (!akkord) {
       box.className = 'akkord akkord--fehler';
       var fehlerKopf = document.createElement('div');
       fehlerKopf.className = 'akkord__kopf';
@@ -1178,8 +1240,6 @@
       return box;
     }
 
-    var akkord = baueAkkord(rohdaten);
-    if (akkord.be === null) { akkord.be = ta.be; }
     box.className = 'akkord';
 
     var kopf = document.createElement('div');
@@ -1202,6 +1262,19 @@
     toene.className = 'akkord__toene';
     toene.textContent = akkord.toene.join(' · ');
     box.appendChild(toene);
+
+    /* Was der Akkord in der Tonart tut – und was der Schritt vom vorigen
+       bewirkt. Die Funktion steht in jedem Fall da, der Schritt nur, wenn es
+       einen vorigen Akkord gibt. */
+    box.appendChild(einordnung('akkord__funktion',
+      akkord.funktion.name, akkord.funktion.text));
+
+    if (vorher) {
+      var schritt = schrittVon(vorher, akkord, istLetzter);
+      if (schritt) {
+        box.appendChild(einordnung('akkord__schritt', schritt.name, schritt.text, '↳'));
+      }
+    }
 
     /* Klavier ist die Hauptansicht, Gitarre die Alternative. Findet sich
        wider Erwarten kein Griff, bleibt die Klaviatur stehen. */
@@ -1231,6 +1304,7 @@
       warte.className = 'leer';
       warte.textContent = 'Akkorde zusammenstellen – mit „Fertig" erscheinen hier die Karten.';
       elErgebnis.appendChild(warte);
+      elIdeen.hidden = true;
       return;
     }
 
@@ -1239,6 +1313,7 @@
       leer.className = 'leer';
       leer.textContent = 'Noch keine Progression eingegeben.';
       elErgebnis.appendChild(leer);
+      elIdeen.hidden = true;
       merke(ta, '');
       return;
     }
@@ -1263,9 +1338,20 @@
     vorzeichenZeile.appendChild(vorzeichenText);
     elErgebnis.appendChild(vorzeichenZeile);
 
-    tokens.forEach(function (token) {
-      elErgebnis.appendChild(karte(token, ta));
+    /* Erst alle Akkorde lesen, dann zeichnen: jeder Karte wird der vorige
+       Akkord mitgegeben, damit sie den Schritt beschreiben kann. Unerkanntes
+       zählt dabei nicht als Vorgänger. */
+    var akkorde = tokens.map(function (token) { return leseAkkord(token, ta); });
+
+    tokens.forEach(function (token, i) {
+      var vorher = null;
+      for (var j = i - 1; j >= 0; j--) {
+        if (akkorde[j]) { vorher = akkorde[j]; break; }
+      }
+      elErgebnis.appendChild(karte(token, akkorde[i], vorher, i === tokens.length - 1));
     });
+
+    zeigeIdeen(akkorde, tokens, ta);
 
     /* Gemerkt und in die Adresse kommt die Stufenfolge, nicht der Feldtext:
        eine Vorlage lässt sich so in jeder Tonart wieder herstellen. */
@@ -1465,6 +1551,343 @@
     bauOffen = false;
     if (vorlageZurueck && bauVorlageVorher) { setzeVorlage(bauVorlageVorher); }
     zeigeBau();
+  }
+
+  /* ---------------------------------------------------------------
+     5c. Funktion und Schritt – was ein Akkord in der Tonart tut
+     --------------------------------------------------------------- */
+
+  /* Welche Aufgabe ein Akkord in der Tonart hat. Die Einteilung ist die
+     gebräuchliche deutsche Funktionslehre: Tonika (Ruhe), Subdominante
+     (Weitung), Dominante (Spannung), dazu die Parallelklänge im Terzabstand.
+
+     Über die dritte und die sechste Stufe sind sich die Lehrbücher uneins –
+     die iii lässt sich als Dominant- wie als Tonikagegenklang lesen, die vi
+     als Tonikaparallele oder als Subdominantgegenklang. Hier steht jeweils
+     die gängigere Lesart; der kurze Satz beschreibt ohnehin die Wirkung und
+     nicht den Streit. */
+  var FUNKTION_DUR = [
+    { rolle: 'tonika',       name: 'Tonika',
+      text: 'Ruhepunkt – hier kommt die Progression an.' },
+    { rolle: 'subdominante', name: 'Subdominantenparallele',
+      text: 'die weiche Subdominante – öffnet und schiebt zur Dominante.' },
+    { rolle: 'dominante',    name: 'Dominantparallele',
+      text: 'schwacher Dominantklang – drängt nur leise, färbt aber.' },
+    { rolle: 'subdominante', name: 'Subdominante',
+      text: 'öffnet und weitet – führt weg vom Ruhepunkt.' },
+    { rolle: 'dominante',    name: 'Dominante',
+      text: 'erzeugt Spannung und will zur Tonika zurück.' },
+    { rolle: 'tonika',       name: 'Tonikaparallele',
+      text: 'das Moll-Zuhause – klingt nach Tonika, nur weicher.' },
+    { rolle: 'dominante',    name: 'Dominante ohne Grundton',
+      text: 'spannt wie die Dominante, schwebt aber, weil ihr Grundton fehlt.' }
+  ];
+
+  var FUNKTION_MOLL = [
+    { rolle: 'tonika',       name: 'Tonika',
+      text: 'Ruhepunkt – hier kommt die Progression an.' },
+    { rolle: 'subdominante', name: 'Subdominante',
+      text: 'die verminderte Subdominante – dunkel, leitet weiter.' },
+    { rolle: 'tonika',       name: 'Tonikaparallele',
+      text: 'die Dur-Parallele – heller als die Tonika.' },
+    { rolle: 'subdominante', name: 'Subdominante',
+      text: 'öffnet und weitet – führt weg vom Ruhepunkt.' },
+    { rolle: 'dominante',    name: 'Dominante',
+      text: 'erzeugt Spannung und will zur Tonika zurück.' },
+    { rolle: 'subdominante', name: 'Subdominantenparallele',
+      text: 'farbiger Ausweichklang – oft das Ziel eines Trugschlusses.' },
+    { rolle: 'dominante',    name: 'Dominantparallele',
+      text: 'tiefe Dominante – drängt weniger stark als die fünfte Stufe.' }
+  ];
+
+  /* Tongeschlecht eines Akkordtyps. Vorhalte und Powerchords haben keine
+     Terz – bei ihnen bleibt es offen. */
+  var TYP_MOLL  = { min: 1, m7: 1, m9: 1, m11: 1, m13: 1, m6: 1, m69: 1, madd9: 1,
+                    mMaj7: 1, m7b9: 1, 'm7#5': 1 };
+  var TYP_VERM  = { dim: 1, dim7: 1, m7b5: 1 };
+  var TYP_UEBER = { aug: 1, '7#5': 1 };
+  var TYP_OFFEN = { sus2: 1, sus4: 1, '7sus4': 1, '5': 1 };
+  /* Dur mit kleiner Septime – die eigentliche Dominantform */
+  var TYP_DOM7  = { '7': 1, '9': 1, '13': 1, '7b9': 1, '7#9': 1, '7b5': 1, '7#5': 1 };
+
+  function tongeschlecht(typ) {
+    if (TYP_VERM[typ])  { return 'vermindert'; }
+    if (TYP_UEBER[typ]) { return 'übermäßig'; }
+    if (TYP_MOLL[typ])  { return 'moll'; }
+    if (TYP_OFFEN[typ]) { return 'offen'; }
+    return 'dur';
+  }
+
+  /* Die Stufe als römische Ziffer samt Zusatz: groß für Dur, klein für Moll
+     und vermindert. Nur an einer Stelle geschrieben, damit das Abzeichen auf
+     der Karte und die Bezeichnung in der Karte dieselbe Schreibweise haben. */
+  function stufenZeichen(grad, typ) {
+    var info = AKKORDTYPEN[typ] || {};
+    var numeral = ROEMISCH[grad - 1];
+    return (info.klein ? numeral.toLowerCase() : numeral) + (info.stufeSuffix || '');
+  }
+
+  /* Auf welcher Stufe der Tonart der Grundton liegt – nach dem Ton, nicht nach
+     dem Tongeschlecht: Fm in C-Dur ist die vierte Stufe, nur eben Moll. */
+  function stufeInTonart(akkord, ta) {
+    var skala = ta.moll ? SKALA_MOLL : SKALA_DUR;
+    for (var i = 0; i < skala.length; i++) {
+      if ((((ta.grundton + skala[i]) % 12) + 12) % 12 === akkord.grundtonPc) {
+        return i + 1;
+      }
+    }
+    return 0;
+  }
+
+  /* Was der Akkord in dieser Tonart tut. Von der leitereigenen Stufe wird
+     abgewichen, wenn das Tongeschlecht ein anderes ist als erwartet – daraus
+     entstehen die interessanten Fälle: Moll-Subdominante, Zwischendominante
+     und die Dur-Dominante im Moll. */
+  function funktionVon(akkord, ta) {
+    var grad = stufeInTonart(akkord, ta);
+    var geschlecht = tongeschlecht(akkord.typ);
+
+    if (!grad) {
+      return { grad: 0, rolle: 'fremd', name: 'Lehnakkord',
+        text: 'gehört nicht zu dieser Tonart – von außen geliehen, das klingt überraschend.' };
+    }
+
+    var erwartet = (ta.moll ? STUFEN_QUALITAET_MOLL : STUFEN_QUALITAET_DUR)[grad - 1];
+    var erwartetesGeschlecht = erwartet === 'dim' ? 'vermindert' : erwartet === 'min' ? 'moll' : 'dur';
+    var basis = (ta.moll ? FUNKTION_MOLL : FUNKTION_DUR)[grad - 1];
+
+    if (!ta.moll && grad === 4 && geschlecht === 'moll') {
+      return { grad: grad, rolle: 'subdominante', name: 'Moll-Subdominante',
+        text: 'die verdunkelte Subdominante – aus der Paralleltonart geliehen.' };
+    }
+    if (!ta.moll && grad === 5 && geschlecht === 'moll') {
+      return { grad: grad, rolle: 'dominante', name: 'Moll-Dominante',
+        text: 'zieht schwächer als die Dur-Dominante, weil der Leitton fehlt.' };
+    }
+    if (!ta.moll && grad === 1 && TYP_DOM7[akkord.typ]) {
+      return { grad: grad, rolle: 'dominante', name: 'Dominantsept auf der Tonika',
+        text: 'zieht als Dur-Akkord mit kleiner Septime zur Subdominante – bluesig.' };
+    }
+    if (!ta.moll && erwartetesGeschlecht !== 'dur' && geschlecht === 'dur') {
+      return { grad: grad, rolle: 'dominante', name: 'Zwischendominante',
+        text: 'ein Dur-Akkord dort, wo die Tonart Moll erwartet – er deutet auf den nächsten hin.' };
+    }
+    if (ta.moll && grad === 5 && geschlecht === 'dur') {
+      return { grad: grad, rolle: 'dominante', name: 'Dominante',
+        text: 'als Dur mit Leitton (harmonisches Moll) – zieht stark zur Tonika.' };
+    }
+    if (ta.moll && grad === 5 && geschlecht === 'moll') {
+      return { grad: grad, rolle: 'dominante', name: 'Moll-Dominante',
+        text: 'die natürliche Moll-Dominante – ohne Leitton, sie zieht schwächer.' };
+    }
+    return { grad: grad, rolle: basis.rolle, name: basis.name, text: basis.text };
+  }
+
+  /* Was der Schritt vom vorigen Akkord bewirkt. Die Schlussarten haben
+     Vorrang – sie sind das, was man hört. Bleibt keine übrig, beschreibt
+     der Abstand der Grundtöne die Wirkung. */
+  function schrittVon(vorher, jetzt, istLetzter) {
+    if (vorher.funktion.rolle === 'dominante' && jetzt.funktion.grad === 6) {
+      return { name: 'Trugschluss',
+        text: 'statt der Tonika kommt die sechste Stufe – der erwartete Schluss wird umgangen.' };
+    }
+    if (vorher.funktion.rolle === 'dominante' && jetzt.funktion.rolle === 'tonika') {
+      return { name: 'Ganzschluss',
+        text: 'die Dominante löst sich zur Tonika auf – hier ist die Progression zu Hause.' };
+    }
+    if (vorher.funktion.rolle === 'subdominante' && jetzt.funktion.rolle === 'tonika') {
+      return { name: 'Plagalschluss',
+        text: 'der sanfte Schluss ohne Dominante – die „Amen“-Wendung.' };
+    }
+    if (istLetzter && jetzt.funktion.rolle === 'dominante') {
+      return { name: 'Halbschluss',
+        text: 'die Progression endet offen auf der Dominante – es klingt wie eine Frage.' };
+    }
+    if (vorher.funktion.grad === 2 && jetzt.funktion.rolle === 'dominante') {
+      return { name: 'ii–V',
+        text: 'die Subdominante bereitet die Dominante vor – die Schlussformel des Jazz.' };
+    }
+    if (vorher.funktion.rolle === 'subdominante' && jetzt.funktion.rolle === 'dominante') {
+      return { name: 'Subdominante zur Dominante',
+        text: 'die Spannung wächst – von hier aus wird die Auflösung erwartet.' };
+    }
+
+    var abstand = (((jetzt.grundtonPc - vorher.grundtonPc) % 12) + 12) % 12;
+    var nachAbstand = {
+      5:  { name: 'Quintfall',      text: 'der Grundton fällt eine Quinte – der stärkste Zug nach vorn.' },
+      7:  { name: 'Quint aufwärts', text: 'öffnend, aber weniger zwingend als der Quintfall.' },
+      1:  { name: 'Halbtonschritt', text: 'der kleinste Schritt – der Bass zieht sich weiter.' },
+      11: { name: 'Halbtonschritt', text: 'der kleinste Schritt – der Bass zieht sich weiter.' },
+      2:  { name: 'Ganztonschritt', text: 'nur einen Schritt weiter – verbindet, ohne zu drängen.' },
+      10: { name: 'Ganztonschritt', text: 'nur einen Schritt zurück – verbindet, ohne zu drängen.' },
+      3:  { name: 'Terzverwandt',   text: 'zwei gemeinsame Töne – farbig statt zwingend.' },
+      4:  { name: 'Terzverwandt',   text: 'zwei gemeinsame Töne – farbig statt zwingend.' },
+      8:  { name: 'Terzverwandt',   text: 'zwei gemeinsame Töne – farbig statt zwingend.' },
+      9:  { name: 'Terzverwandt',   text: 'zwei gemeinsame Töne – farbig statt zwingend.' },
+      6:  { name: 'Tritonus',       text: 'der weiteste Schritt – sehr spannungsvoll, fast fremd.' },
+      0:  { name: 'Umdeutung',      text: 'derselbe Grundton in anderer Farbe – der Akkord wird umgedeutet.' }
+    };
+    return nachAbstand[abstand] || null;
+  }
+
+  /* Einen Akkord lesen und gleich einordnen. Unerkanntes bleibt null. */
+  function leseAkkord(token, ta) {
+    var rohdaten = parseToken(token, ta);
+    if (!rohdaten) { return null; }
+    var akkord = baueAkkord(rohdaten);
+    if (akkord.be === null) { akkord.be = ta.be; }
+    akkord.funktion = funktionVon(akkord, ta);
+
+    /* Ein fertig getippter Akkord trägt sein Abzeichen selbst nicht mit sich –
+       steht er aber auf einer Stufe der Tonart, gehört es hin (Fm in C-Dur
+       ist die vierte Stufe, moll). Von außen geliehene bleiben ohne. */
+    if (!akkord.stufe && akkord.funktion.grad) {
+      akkord.stufe = stufenZeichen(akkord.funktion.grad, akkord.typ);
+    }
+
+    return akkord;
+  }
+
+  /* ---------------------------------------------------------------
+     5d. Ideen zum Variieren
+     --------------------------------------------------------------- */
+
+  /* Ein Akkord auf einem eigenen Grundton. Buchstabe und Vorzeichen entstehen
+     durch Terzenschichtung ab dem Tonbuchstaben der Tonart – in G♭-Dur heißt
+     die vierte Stufe deshalb C♭ und nicht B. */
+  function akkordUeber(buchstabe, buchstabenSchritt, pc, typ) {
+    var b = BUCHSTABEN[(BUCHSTABEN.indexOf(buchstabe) + buchstabenSchritt) % 7];
+    var zielPc = ((pc % 12) + 12) % 12;
+    var versatz = zielPc - BUCHSTABE_PC[b];
+    while (versatz > 2) { versatz -= 12; }
+    while (versatz < -2) { versatz += 12; }
+    return baueAkkord({ buchstabe: b, grundton: zielPc, vorzeichen: versatz, typ: typ }).symbol;
+  }
+
+  /* Die leitereigene Stufe mit einem bestimmten Tongeschlecht */
+  function stufenAkkord(grad, typ, ta) {
+    var skala = ta.moll ? SKALA_MOLL : SKALA_DUR;
+    return akkordUeber(ta.buchstabe, grad - 1, ta.grundton + skala[grad - 1], typ);
+  }
+
+  /* Die Dominante eines Akkords: eine Quinte höher, als Dur mit Septime */
+  function dominanteVon(akkord) {
+    return akkordUeber(akkord.buchstabe, 4, akkord.grundtonPc + 7, '7');
+  }
+
+  /* Die Vorschläge arbeiten auf der ganzen Abfolge, nicht nur auf den
+     erkannten Akkorden: was nicht erkannt wurde, bleibt beim Übernehmen an
+     seinem Platz stehen. "akkorde" enthält dafür null an diesen Stellen. */
+  function ideenFuer(akkorde, tokens, ta) {
+    var liste = [];
+    var skala = ta.moll ? SKALA_MOLL : SKALA_DUR;
+
+    var erkannt = [];
+    akkorde.forEach(function (a, i) { if (a) { erkannt.push(i); } });
+    if (erkannt.length === 0) { return liste; }
+
+    var letzterI = erkannt[erkannt.length - 1];
+    var letzter = akkorde[letzterI];
+    var vorletzterI = erkannt.length > 1 ? erkannt[erkannt.length - 2] : -1;
+    var vorletzter = vorletzterI >= 0 ? akkorde[vorletzterI] : null;
+
+    function an(i) { return akkorde[i] ? akkorde[i].symbol : tokens[i]; }
+
+    /* Die Abfolge mit Ersetzungen an einzelnen Stellen; "weg" lässt eine
+       Stelle ganz heraus. */
+    function folgeMit(ersatz, weg) {
+      var teile = [];
+      for (var i = 0; i < akkorde.length; i++) {
+        if (i === weg) { continue; }
+        teile.push(ersatz[i] !== undefined ? ersatz[i] : an(i));
+      }
+      return teile.join(' ');
+    }
+
+    /* Am Ende nicht nach Hause, sondern zur sechsten Stufe */
+    if (letzter.funktion.grad === 1) {
+      var sechste = stufenAkkord(6, ta.moll ? 'maj' : 'min', ta);
+      var amEnde = {};
+      amEnde[letzterI] = sechste;
+      liste.push({
+        name: 'Trugschluss',
+        satz: 'Am Ende nicht die Tonika, sondern die sechste Stufe (' + sechste +
+              ' statt ' + letzter.symbol + ') – der erwartete Schluss wird umgangen, ' +
+              'die Progression klingt weiter.',
+        folge: folgeMit(amEnde)
+      });
+    }
+
+    /* Auf der Dominante stehen bleiben – erst dann ist es eine Abfolge,
+       die man auch hört. */
+    if (erkannt.length >= 3 && letzter.funktion.grad === 1 &&
+        vorletzter.funktion.rolle === 'dominante') {
+      liste.push({
+        name: 'Offen enden',
+        satz: 'Die letzte Tonika weglassen und auf der Dominante stehen bleiben – ' +
+              'dieselben Akkorde, aber es klingt wie eine Frage (Halbschluss).',
+        folge: folgeMit({}, letzterI)
+      });
+    }
+
+    /* Die Subdominante verdunkeln */
+    if (!ta.moll) {
+      var stellen = {};
+      var hatteSubdominante = false;
+      akkorde.forEach(function (a, i) {
+        if (a && a.funktion.grad === 4) { stellen[i] = stufenAkkord(4, 'min', ta); hatteSubdominante = true; }
+      });
+      if (hatteSubdominante) {
+        liste.push({
+          name: 'Moll-Subdominante',
+          satz: 'Die Subdominante wird Moll (' + stufenAkkord(4, 'min', ta) + ' statt ' +
+                stufenAkkord(4, 'maj', ta) + ') – ein Klang aus der Paralleltonart, ' +
+                'dunkler und weicher.',
+          folge: folgeMit(stellen)
+        });
+      }
+    }
+
+    /* Eine Zwischendominante vor die sechste oder zweite Stufe setzen */
+    var zielI = -1;
+    erkannt.forEach(function (i) {
+      var g = akkorde[i].funktion.grad;
+      if (zielI === -1 && (g === 6 || g === 2)) { zielI = i; }
+    });
+    if (zielI !== -1) {
+      var ziel = akkorde[zielI];
+      var einschub = {};
+      einschub[zielI] = dominanteVon(ziel) + ' ' + ziel.symbol;
+      liste.push({
+        name: 'Zwischendominante',
+        satz: 'Ein Dur-Akkord mit Septime kurz vor ' + ziel.symbol + ' (' +
+              (ziel.funktion.grad === 6 ? 'sechste' : 'zweite') +
+              ' Stufe) – er deutet auf ihn hin und zieht stärker.',
+        folge: folgeMit(einschub)
+      });
+    }
+
+    /* Ein Durchgang im Bass zum letzten Akkord */
+    if (vorletzter && vorletzter.symbol.indexOf('/') === -1) {
+      var bassPc = (((letzter.grundtonPc + 2) % 12) + 12) % 12;
+      var inTonart = skala.some(function (s) {
+        return (((ta.grundton + s) % 12) + 12) % 12 === bassPc;
+      });
+      if (inTonart && bassPc !== vorletzter.grundtonPc) {
+        var bassName = akkordGrundtonName(
+          BUCHSTABEN[(BUCHSTABEN.indexOf(letzter.buchstabe) + 1) % 7], bassPc);
+        var mitBass = {};
+        mitBass[vorletzterI] = vorletzter.symbol + '/' + bassName;
+        liste.push({
+          name: 'Durchgang im Bass',
+          satz: 'Der vorletzte Akkord bekommt den Basston ' + bassName + ' – der Bass ' +
+                'geht dann in einem Schritt zum letzten Akkord.',
+          folge: folgeMit(mitBass)
+        });
+      }
+    }
+
+    return liste;
   }
 
   /* ---------------------------------------------------------------

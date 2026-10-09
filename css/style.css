@@ -433,6 +433,28 @@ main {
   height: auto;
 }
 
+/* Einordnung des Akkords: Aufgabe in der Tonart und Schritt vom vorigen.
+   Ein schmaler Strich links fasst beide Zeilen zusammen, ohne laut zu werden. */
+.akkord__funktion,
+.akkord__schritt {
+  margin: -0.3rem 0 0;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--rand);
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.akkord__funktion { color: var(--text); }
+.akkord__funktion strong { font-weight: 700; }
+
+.akkord__schritt {
+  margin-top: -0.15rem;
+  border-left-color: var(--ton);
+  color: var(--text-leise);
+}
+
+.akkord__schritt strong { color: var(--text); font-weight: 700; }
+
 /* Fehlerkarte */
 .akkord--fehler .akkord__name { font-size: 1.2rem; }
 .akkord--fehler { border-style: dashed; border-color: var(--akzent); }
@@ -503,6 +525,76 @@ main {
 .griff-balken.griff-punkt--grundton { fill: var(--akzent); }
 .griff-balken.griff-punkt--akkordton { fill: var(--ton); }
 .griff-balken.griff-punkt--bass { fill: var(--bass); }
+
+/* ---------- Ideen zum Variieren ---------- */
+
+.ideen {
+  margin-top: 2rem;
+}
+
+.ideen[hidden] { display: none; }
+
+.ideen__titel {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.ideen__unter {
+  margin: 0.35rem 0 0.9rem;
+  max-width: 46rem;
+  font-size: 0.85rem;
+  color: var(--text-leise);
+}
+
+.ideen__liste {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.idee {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+}
+
+.idee__text { flex: 1 1 18rem; }
+
+.idee__name {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.idee__satz {
+  margin: 0.15rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+/* Die Abfolge steht im Knopf – sie ist das, was ein Klick einsetzt. */
+.idee__knopf {
+  flex: none;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.idee__knopf:hover { color: var(--ton); border-color: var(--ton); }
 
 /* ---------- Legende ---------- */
 

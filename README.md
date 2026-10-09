@@ -86,6 +86,23 @@ Basston eines Slash-Akkords grün. `○` heißt leere Saite, `×` nicht anschlag
 ein Balken ist ein Barregriff, und links steht bei Griffen weiter oben am Hals
 die Lage („2. Bund").
 
+**Einordnung auf jeder Karte** – unter den Tönen stehen zwei kurze Zeilen. Die
+erste sagt, was der Akkord in dieser Tonart tut: *Tonika – Ruhepunkt*, *Dominante
+– erzeugt Spannung*, *Tonikaparallele*, *Subdominante – öffnet und weitet*,
+dazu die Abweichungen (*Zwischendominante*, *Moll-Subdominante*, *Lehnakkord*).
+Die zweite, mit ↳ eingeleitet, beschreibt den Schritt vom vorigen Akkord:
+*Quintfall*, *Ganzschluss*, *Plagalschluss*, *Halbschluss*, *Trugschluss*, *ii–V*
+und so weiter. Der erste Akkord hat keinen Schritt, der letzte bekommt, wenn er
+auf der Dominante stehen bleibt, den *Halbschluss*.
+
+**Ideen zum Variieren** – unter den Karten stehen Vorschläge, dieselbe
+Progression einmal anders zu spielen. Jeder Vorschlag nennt seinen Namen und
+einen Satz dazu und zeigt im Knopf die fertige Abfolge **in den Akkorden der
+gewählten Tonart** – ein Klick übernimmt sie ins Eingabefeld, wo sie sich
+weiterbearbeiten lässt. Angeboten werden je nach Abfolge: *Trugschluss*,
+*Offen enden*, *Moll-Subdominante*, *Zwischendominante* und *Durchgang im Bass*.
+Passt nichts davon, bleibt der Abschnitt verborgen.
+
 Tonart, Progression, Schreibweise sowie Sept- und Gitarren-Umschalter landen in
 der Adresse (`?tonart=G-Dur&p=…&sept=1&griff=gitarre`) und im Browserspeicher.
 Ein kopierter Link stellt also genau denselben Zustand wieder her.
@@ -102,8 +119,8 @@ Beides zusammen hilft beim Nachvollziehen am Instrument – c-Moll hat die drei
 ```
 index.html      die Seite
 css/style.css   das gesamte Design (Farben und Maße als CSS-Variablen)
-js/main.js      Musiktheorie, Eingabe-Parser, Zeichnung von Tastatur,
-                Griffbild und Notenbild
+js/main.js      Musiktheorie, Eingabe-Parser, Funktionsbestimmung, Ideen zum
+                Variieren, Zeichnung von Tastatur, Griffbild und Notenbild
 ```
 
 Kein Framework, kein Bundler, keine externen Schriften oder Bibliotheken –
@@ -123,6 +140,52 @@ die drei Umrisse der Notenschrift sind als Pfaddaten eingebettet (siehe
 - Die Klaviatur zeigt zwei Oktaven (C4–B5). Der Grundton ist orange, die
   übrigen Akkordtöne blau, der Basston grün; dieselben Töne eine Oktave
   höher blasser.
+
+### Wie die Einordnung entsteht
+
+- Zuerst wird die **Stufe** bestimmt: auf welchem Ton der Tonleiter der Grundton
+  des Akkords liegt. Das geschieht nach dem Ton, nicht nach dem Tongeschlecht –
+  `Fm` in C-Dur steht auf der vierten Stufe, ist dort aber Moll.
+- Aus Stufe und Tongeschlecht folgt die **Funktion**. Hier gilt die
+  Funktionslehre Riemanns: Tonika, Subdominante, Dominante, dazu die
+  Parallelklänge. Weicht das Tongeschlecht von der Tonleiter ab, entstehen die
+  interessanten Fälle – Moll-Subdominante, Zwischendominante, die Dur-Dominante
+  im Moll. Ein Akkord, dessen Grundton gar nicht in der Tonart liegt, ist ein
+  **Lehnakkord**.
+- Über die 3. und 6. Stufe sind sich die Lehrbücher nicht einig: je nach
+  Zählung sind sie Dominant- oder Tonikaparallele, beziehungsweise Subdominant-
+  oder Tonikaparallele. Die Seite nimmt die gebräuchlichere Lesart und
+  beschreibt im Text lieber, wie der Akkord klingt, statt eine Deutung zu
+  behaupten.
+- Der **Schritt** zum vorigen Akkord wird zuerst nach den Kadenznamen geprüft –
+  Trugschluss vor Ganzschluss, weil die sechste Stufe auch als Tonika zählt –,
+  danach nach dem Abstand der beiden Grundtöne (Quintfall, Quint aufwärts,
+  Halbton, Ganzton, Terzverwandtschaft, Tritonus, gleicher Ton als Umdeutung).
+  „Halbschluss" gibt es nur für den letzten Akkord, und nur, wenn die
+  Progression dort offen stehen bleibt.
+
+### Wie die Ideen entstehen
+
+Jede Idee wird aus der Abfolge selbst gebaut, nicht aus einer Liste:
+
+- **Trugschluss** – endet die Abfolge auf der Tonika, wird sie durch die
+  sechste Stufe ersetzt.
+- **Offen enden** – steht vor der letzten Tonika die Dominante, lässt sich die
+  Tonika ganz weglassen; aus der Kadenz wird eine Frage. Angeboten wird das erst
+  ab drei Akkorden, sonst bliebe ein einziger übrig.
+- **Moll-Subdominante** – in Dur wird jede Subdominante zu Moll; das ist der
+  Klang aus der Paralleltonart.
+- **Zwischendominante** – vor die erste sechste oder zweite Stufe kommt ein
+  Dur-Akkord mit Septime auf ihrer Oberquinte.
+- **Durchgang im Bass** – der vorletzte Akkord bekommt einen Basston einen
+  Ganztonschritt über dem letzten Grundton; der Bass geht dann in einem Schritt
+  nach Hause. Nur wenn dieser Ton zur Tonart gehört.
+
+Die neuen Akkorde entstehen über die **Terzenschichtung** ab dem Grundton des
+jeweiligen Akkords – deshalb heißen sie in G♭-Dur auch `C♭m` und `B♭7` und
+nicht `Bm` und `A♯7`. Steht in der Abfolge etwas, das die Seite nicht erkennt,
+bleibt es beim Vorschlag an seinem Platz stehen, statt stillschweigend zu
+verschwinden.
 
 ### Wie die Vorzeichen entstehen
 
