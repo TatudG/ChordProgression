@@ -41,6 +41,29 @@
       <select id="vorlage">
         <option value="">– eigene Eingabe –</option>
       </select>
+      <button type="button" class="knopf knopf--feld" id="bau-oeffnen"
+              aria-expanded="false" aria-controls="bau">Akkorde zusammenstellen</button>
+    </div>
+
+    <div class="feld bau" id="bau" hidden>
+      <p class="bau__titel">Akkorde zusammenstellen</p>
+
+      <div class="bau__reihe bau__reihe--wahl">
+        <label for="bau-ton">Ton</label>
+        <select id="bau-ton"></select>
+        <label for="bau-art">Art</label>
+        <select id="bau-art"></select>
+        <button type="button" class="knopf bau__hinzu" id="bau-hinzu">Hinzufügen</button>
+      </div>
+
+      <p class="hinweis" id="bau-leer">Noch kein Akkord gewählt.</p>
+      <ul class="bau__liste" id="bau-liste" aria-label="Akkorde der Abfolge" hidden></ul>
+
+      <div class="bau__reihe">
+        <button type="button" class="knopf" id="bau-zurueck">↶ Zurück</button>
+        <button type="button" class="knopf" id="bau-alles">Leeren</button>
+        <button type="button" class="knopf knopf--fest" id="bau-fertig">Fertig</button>
+      </div>
     </div>
 
     <div class="feld feld--zeile">

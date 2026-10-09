@@ -177,6 +177,159 @@ main {
   border-radius: 4px;
 }
 
+/* Knöpfe – zurückhaltend, damit sie neben den Auswahlfeldern nicht
+   lauter wirken als nötig. */
+.knopf {
+  padding: 0.45rem 0.85rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  min-height: 44px;  /* bequem antippbar, wie die Eingabefelder */
+  cursor: pointer;
+}
+
+.knopf:hover { border-color: var(--text-leise); }
+
+/* Der einzige Schritt, der weiterführt, darf auffallen – aber nur über den
+   Rahmen: weiß auf Blau wäre im dunklen Modus zu flau. */
+.knopf--fest {
+  font-weight: 600;
+  color: var(--ton);
+  border: 2px solid var(--ton);
+}
+
+.knopf--feld { width: 100%; margin-top: 0.4rem; }
+
+/* ---------- Akkorde zusammenstellen ---------- */
+
+/* Tritt an die Stelle der Eingabe von Hand: Ton und Art wählen, der Akkord
+   wandert in die Abfolge. Die Karten erscheinen erst mit "Fertig". */
+.bau {
+  grid-column: 1 / -1;      /* volle Breite, auch im dreispaltigen Raster */
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  background: var(--hintergrund);
+  border: 1px solid var(--rand);
+  border-radius: 10px;
+}
+
+/* display:grid würde das hidden-Attribut sonst aushebeln */
+.bau[hidden] { display: none; }
+
+.bau__titel {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.bau__reihe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+/* Ton und Art als Paare aus Beschriftung und Feld – so rutscht keine
+   Beschriftung von ihrem Feld weg. Auf schmalen Geräten stehen die Felder
+   in einer eigenen Spalte, der Knopf darunter. */
+.bau__reihe--wahl {
+  display: grid;
+  grid-template-columns: max-content minmax(5.5rem, 11rem) max-content
+                         minmax(5.5rem, 11rem) max-content;
+}
+
+.bau__reihe--wahl select { width: 100%; min-width: 0; }
+
+@media (max-width: 640px) {
+  .bau__reihe--wahl { grid-template-columns: auto 1fr; }
+  .bau__hinzu { grid-column: 2; justify-self: start; }
+}
+
+.bau__reihe label {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-leise);
+}
+
+.bau__reihe select {
+  width: auto;
+  min-width: 6rem;
+  padding: 0.45rem 0.6rem;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+/* Die Abfolge als nummerierte Reihe – jeder Akkord lässt sich einzeln
+   wieder herausnehmen. */
+.bau__liste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bau__liste[hidden] { display: none; }
+
+.bau__punkt {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.25rem 0.15rem 0.5rem;
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: 999px;
+}
+
+.bau__nummer {
+  font-size: 0.75rem;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+}
+
+.bau__name { font-weight: 600; }
+
+.bau__weg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--text-leise);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.bau__weg:hover { color: var(--akzent); background: var(--hintergrund); }
+
+/* Am Finger ist ein 28-px-Kreuz zu klein – das Plättchen wächst mit. */
+@media (max-width: 640px) {
+  .bau__weg { width: 2.25rem; height: 2.25rem; }
+}
+
 :focus-visible {
   outline: 3px solid var(--ton);
   outline-offset: 2px;
@@ -286,6 +439,7 @@ main {
 .akkord--fehler .akkord__toene { color: var(--akzent); }
 
 .leer {
+  grid-column: 1 / -1;      /* ein einzelner Hinweis füllt die Zeile */
   padding: 2rem 1rem;
   color: var(--text-leise);
   text-align: center;

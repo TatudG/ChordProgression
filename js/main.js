@@ -1118,6 +1118,16 @@
   var elGitarre = document.getElementById('gitarre');
   var elLegendeKlavier = document.getElementById('legende-klavier');
   var elLegendeGitarre = document.getElementById('legende-gitarre');
+  var elBau = document.getElementById('bau');
+  var elBauOeffnen = document.getElementById('bau-oeffnen');
+  var elBauTon = document.getElementById('bau-ton');
+  var elBauArt = document.getElementById('bau-art');
+  var elBauHinzu = document.getElementById('bau-hinzu');
+  var elBauListe = document.getElementById('bau-liste');
+  var elBauLeer = document.getElementById('bau-leer');
+  var elBauZurueck = document.getElementById('bau-zurueck');
+  var elBauAlles = document.getElementById('bau-alles');
+  var elBauFertig = document.getElementById('bau-fertig');
 
   /* Die Legende erklärt die Farben – und die sind in beiden Ansichten
      dieselben, nur die vierte Zeile gilt bloß fürs Klavier. */
@@ -1213,6 +1223,17 @@
 
     elErgebnis.textContent = '';
 
+    /* Während zusammengestellt wird, steht die Abfolge in der Auswahl – die
+       Karten erscheinen erst mit "Fertig". Gemerkt wird in dieser Zeit
+       nichts: eine halb gebaute Abfolge gehört nicht in die Adresse. */
+    if (bauOffen) {
+      var warte = document.createElement('p');
+      warte.className = 'leer';
+      warte.textContent = 'Akkorde zusammenstellen – mit „Fertig" erscheinen hier die Karten.';
+      elErgebnis.appendChild(warte);
+      return;
+    }
+
     if (tokens.length === 0) {
       var leer = document.createElement('p');
       leer.className = 'leer';
@@ -1249,6 +1270,201 @@
     /* Gemerkt und in die Adresse kommt die Stufenfolge, nicht der Feldtext:
        eine Vorlage lässt sich so in jeder Tonart wieder herstellen. */
     merke(ta, quelleDerProgression().trim());
+  }
+
+  /* ---------------------------------------------------------------
+     5b. Akkorde zusammenstellen
+     --------------------------------------------------------------- */
+
+  /* Ton und Art aus zwei Auswahlfeldern zu einer Abfolge aneinanderreihen,
+     statt von Hand zu tippen. Die Abfolge steht als nummerierte Reihe da;
+     fertig ist sie mit "Fertig" – dann erscheinen die Karten.
+
+     Der Ton steht getrennt in zwei Schreibweisen: welche zuerst kommt,
+     richtet sich nach der Tonart (in G♭-Dur zuerst G♭, in E-Dur zuerst F♯).
+     Beide Listen sind nach Halbton geordnet, liegen also auf demselben Index. */
+  var BAU_TON_KREUZ = [['C', 0], ['C', 1], ['D', 0], ['D', 1], ['E', 0], ['F', 0],
+                       ['F', 1], ['G', 0], ['G', 1], ['A', 0], ['A', 1], ['B', 0]];
+  var BAU_TON_FLACH = [['C', 0], ['D', -1], ['D', 0], ['E', -1], ['E', 0], ['F', 0],
+                       ['G', -1], ['G', 0], ['A', -1], ['A', 0], ['B', -1], ['B', 0]];
+
+  /* Reihenfolge und Gruppierung der Akkordarten. Die Beschriftung entsteht
+     aus AKKORDTYPEN – im Auswahlfeld steht also dasselbe wie im Akkord. */
+  var BAU_ARTEN = [
+    { gruppe: 'Dreiklänge',           typen: ['maj', 'min', 'dim', 'aug', '5'] },
+    { gruppe: 'Mit Septime',          typen: ['7', 'maj7', 'm7', 'm7b5', 'dim7', 'mMaj7'] },
+    { gruppe: 'Vorhalte und Zusätze', typen: ['6', 'm6', 'sus2', 'sus4', '7sus4', 'add9', 'madd9'] },
+    { gruppe: 'Erweiterungen',        typen: ['9', 'maj9', 'm9', '11', 'm11', '13', 'm13'] },
+    { gruppe: 'Alteriert',            typen: ['7b9', '7#9', '7b5', '7#5', '69', 'm69'] }
+  ];
+
+  var bauListe = [];               /* gewählte Akkorde, in der Reihenfolge der Eingabe */
+  var bauOffen = false;            /* Auswahlbereich sichtbar */
+  var bauVorlageVorher = '';       /* Vorlage, die beim Öffnen aufgegeben wurde */
+
+  function bauArtLabel(typ) {
+    if (typ === 'maj') { return 'Dur'; }
+    if (typ === 'min') { return 'Moll'; }
+    return AKKORDTYPEN[typ].suffix;
+  }
+
+  /* Aus dem Wert "B|-1" des Auswahlfelds wird Buchstabe und Vorzeichen */
+  function bauTonAusWert(wert) {
+    var teile = wert.split('|');
+    return { buchstabe: teile[0], versatz: parseInt(teile[1], 10) };
+  }
+
+  /* Ein Eintrag der Abfolge als Akkordsymbol. "roh" sind Zeichen, die aus dem
+     Eingabefeld stammen und sich nicht in Ton + Art auflösen ließen (etwa
+     eine Stufe wie "I") – die bleiben unverändert stehen. */
+  function bauSymbol(eintrag) {
+    if (eintrag.roh !== undefined) { return eintrag.roh; }
+    return baueAkkord({
+      buchstabe: eintrag.buchstabe,
+      grundton: (((BUCHSTABE_PC[eintrag.buchstabe] + eintrag.versatz) % 12) + 12) % 12,
+      vorzeichen: eintrag.versatz,
+      typ: eintrag.typ
+    }).symbol;
+  }
+
+  /* Was im Feld steht, ist der Ausgangspunkt der Zusammenstellung – so lässt
+     sich eine fertige Abfolge weiterbearbeiten statt neu anzufangen. */
+  function bauEintragAus(token, ta) {
+    var rohdaten = parseToken(token, ta);
+    if (rohdaten && !rohdaten.bass) {
+      var eintrag = {
+        buchstabe: rohdaten.buchstabe, versatz: rohdaten.vorzeichen, typ: rohdaten.typ
+      };
+      if (bauSymbol(eintrag) === token) { return eintrag; }
+    }
+    return { roh: token };
+  }
+
+  function fuelleBauToene() {
+    var ta = holeTonart(elTonart.value);
+    var passt = ta.be ? BAU_TON_FLACH : BAU_TON_KREUZ;
+    var anders = ta.be ? BAU_TON_KREUZ : BAU_TON_FLACH;
+    var vorher = elBauTon.value;
+    var doppelt = [];
+    var i;
+
+    function gruppe(titel, liste) {
+      var optgroup = document.createElement('optgroup');
+      optgroup.label = titel;
+      liste.forEach(function (eintrag) {
+        var opt = document.createElement('option');
+        opt.value = eintrag[0] + '|' + eintrag[1];
+        opt.textContent = notenName(eintrag[0], eintrag[1]);
+        optgroup.appendChild(opt);
+      });
+      elBauTon.appendChild(optgroup);
+    }
+
+    /* Nur die fünf Töne mit zwei Namen stehen doppelt: dieselbe Taste,
+       anderer Name. */
+    for (i = 0; i < anders.length; i++) {
+      if (anders[i][0] !== passt[i][0]) { doppelt.push(anders[i]); }
+    }
+
+    elBauTon.textContent = '';
+    gruppe('Töne', passt);
+    if (doppelt.length) { gruppe('andere Schreibweise', doppelt); }
+
+    elBauTon.value = vorher || 'C|0';
+    if (elBauTon.selectedIndex === -1) { elBauTon.value = 'C|0'; }
+  }
+
+  function fuelleBauArten() {
+    BAU_ARTEN.forEach(function (teil) {
+      var optgroup = document.createElement('optgroup');
+      optgroup.label = teil.gruppe;
+      teil.typen.forEach(function (typ) {
+        var opt = document.createElement('option');
+        opt.value = typ;
+        opt.textContent = bauArtLabel(typ);
+        optgroup.appendChild(opt);
+      });
+      elBauArt.appendChild(optgroup);
+    });
+  }
+
+  function zeichneBauListe() {
+    elBauListe.textContent = '';
+    elBauListe.hidden = bauListe.length === 0;
+    elBauLeer.hidden = bauListe.length > 0;
+
+    bauListe.forEach(function (eintrag, nummer) {
+      var punkt = document.createElement('li');
+      punkt.className = 'bau__punkt';
+
+      var zahl = document.createElement('span');
+      zahl.className = 'bau__nummer';
+      zahl.textContent = nummer + 1;
+      punkt.appendChild(zahl);
+
+      var name = document.createElement('span');
+      name.className = 'bau__name';
+      name.textContent = bauSymbol(eintrag);
+      punkt.appendChild(name);
+
+      var weg = document.createElement('button');
+      weg.type = 'button';
+      weg.className = 'bau__weg';
+      weg.textContent = '×';
+      weg.setAttribute('aria-label', bauSymbol(eintrag) + ' wieder entfernen');
+      weg.addEventListener('click', function () {
+        bauListe.splice(nummer, 1);
+        bauGeaendert();
+      });
+      punkt.appendChild(weg);
+
+      elBauListe.appendChild(punkt);
+    });
+  }
+
+  /* Die Abfolge ins Eingabefeld übernehmen – erst damit gilt sie als
+     Progression und die Karten erscheinen. Solange zusammengestellt wird,
+     bleibt das Feld unangetastet: dort steht bis "Fertig" die alte
+     Progression. */
+  function uebernimmBauListe() {
+    elProgression.value = bauListe.map(bauSymbol).join(' ');
+  }
+
+  function bauGeaendert() {
+    zeichneBauListe();
+    zeichne();
+  }
+
+  function zeigeBau() {
+    elBau.hidden = !bauOffen;
+    elBauOeffnen.setAttribute('aria-expanded', bauOffen ? 'true' : 'false');
+    elBauOeffnen.textContent = bauOffen ? 'Zusammenstellen schließen' : 'Akkorde zusammenstellen';
+    if (bauOffen) { zeichneBauListe(); }
+  }
+
+  function oeffneBau() {
+    var ta = holeTonart(elTonart.value);
+    /* Was schon im Feld steht, ist der Anfang der Abfolge – so lässt sich
+       eine fertige Progression weiterbauen, statt neu anzufangen. */
+    bauListe = tokenisieren(elProgression.value).map(function (token) {
+      return bauEintragAus(token, ta);
+    });
+    bauVorlageVorher = elVorlage.value;
+    bauOffen = true;
+    setzeVorlage('');       /* eine Zusammenstellung ist keine Vorlage */
+    fuelleBauToene();
+    zeigeBau();
+    zeichne();
+  }
+
+  /* Den Auswahlbereich schließen, ohne die Abfolge zu übernehmen. Wird er
+     nur zugemacht, kommt eine zuvor gewählte Vorlage zurück – sonst hätte
+     ein Blick in die Zusammenstellung die Tonartbindung gekostet. */
+  function schliesseBau(vorlageZurueck) {
+    if (!bauOffen) { return; }
+    bauOffen = false;
+    if (vorlageZurueck && bauVorlageVorher) { setzeVorlage(bauVorlageVorher); }
+    zeigeBau();
   }
 
   /* ---------------------------------------------------------------
@@ -1386,24 +1602,32 @@
   elTonart.value = holeTonart(startTonart).id;
   elProgression.value = startProgression;
   setzeVorlage(startProgression);
+  fuelleBauArten();
+  fuelleBauToene();
   schreibeFeld();
   zeigeLegende();
 
   /* Eine andere Tonart transponiert die Vorlage mit, statt die alten
      Akkorde stehen zu lassen. */
   elTonart.addEventListener('change', function () {
+    /* Die Tonliste richtet sich nach der Tonart: in G♭-Dur steht G♭ vorne,
+       in E-Dur F♯. Die gewählten Akkorde behalten ihre Schreibweise. */
+    if (bauOffen) { fuelleBauToene(); zeichneBauListe(); }
     schreibeFeld();
     zeichne();
   });
 
   /* Tippen im Feld ist eine eigene Eingabe – die Vorlagenauswahl springt
-     dann auf "eigene Eingabe", das Feld bleibt genau so, wie getippt. */
+     dann auf "eigene Eingabe", das Feld bleibt genau so, wie getippt. Von
+     Hand getippt heißt auch: die Zusammenstellung ist beendet. */
   elProgression.addEventListener('input', function () {
+    schliesseBau();
     setzeVorlage(elProgression.value);
     zeichne();
   });
 
   elVorlage.addEventListener('change', function () {
+    schliesseBau();
     schreibeFeld();
     zeichne();
   });
@@ -1412,6 +1636,9 @@
     notenStil = elNotennamen.checked ? 'deutsch' : 'international';
     beschrifteTonartenNeu();
     schreibeFeld();          /* B♭ heißt dann B */
+    /* Im Zusammenstellen heißt der Ton im Auswahlfeld und auf den Plättchen
+       jetzt anders – die Abfolge selbst bleibt dieselbe. */
+    if (bauOffen) { fuelleBauToene(); zeichneBauListe(); }
     zeichne();
   });
 
@@ -1424,6 +1651,48 @@
   elGitarre.addEventListener('change', function () {
     griffModus = elGitarre.checked;
     zeigeLegende();
+    zeichne();
+  });
+
+  /* ---- Akkorde zusammenstellen ---- */
+
+  elBauOeffnen.addEventListener('click', function () {
+    if (bauOffen) {
+      /* Nur zugemacht, nichts übernommen: eine aufgegebene Vorlage kommt
+         zurück, sonst wäre die Tonartbindung durch einen Blick verloren. */
+      schliesseBau(true);
+      zeichne();
+    } else {
+      oeffneBau();
+    }
+  });
+
+  elBauHinzu.addEventListener('click', function () {
+    var ton = bauTonAusWert(elBauTon.value);
+    bauListe.push({
+      buchstabe: ton.buchstabe, versatz: ton.versatz, typ: elBauArt.value
+    });
+    bauGeaendert();
+  });
+
+  elBauZurueck.addEventListener('click', function () {
+    if (!bauListe.length) { return; }
+    bauListe.pop();
+    bauGeaendert();
+  });
+
+  elBauAlles.addEventListener('click', function () {
+    if (!bauListe.length) { return; }
+    bauListe = [];
+    bauGeaendert();
+  });
+
+  elBauFertig.addEventListener('click', function () {
+    /* ohne Akkord gibt es nichts zu übernehmen – dann bleibt das Feld, wie
+       es war, und nur der Auswahlbereich geht zu */
+    if (bauListe.length) { uebernimmBauListe(); }
+    bauOffen = false;
+    zeigeBau();
     zeichne();
   });
 

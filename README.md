@@ -53,6 +53,22 @@ Feld tippt, gilt es als eigene Eingabe und bleibt genau so stehen, wie getippt.
 Septakkorde, Jazz, Blues, Basslinie) füllen das Eingabefeld. Eigene Eingaben
 setzen die Auswahl auf „eigene Eingabe" zurück.
 
+**Akkorde zusammenstellen** – der Knopf unter dem Vorlagenfeld baut eine
+Abfolge aus zwei Auswahlfeldern statt aus getipptem Text. **Ton** bietet die
+zwölf Töne in der Schreibweise der Tonart – in G♭-Dur also G♭, in E-Dur F♯ –
+und darunter die andere Schreibweise derselben Töne. **Art** bietet 31
+Akkordtypen in fünf Gruppen, von Dur und Moll über Septakkorde und
+Sus-Vorhalte bis zu den Alterationen. „Hinzufügen" hängt den Akkord an die
+nummerierte Reihe darunter; das × an einem Plättchen, „↶ Zurück" und „Leeren"
+nehmen ihn wieder heraus.
+
+Angefangen wird bei dem, was schon im Feld steht – eine fertige Progression
+lässt sich so ergänzen, statt sie neu zu tippen. Die Karten erscheinen erst
+mit **Fertig**, und erst dann wird die Abfolge ins Eingabefeld übernommen;
+bis dahin steht dort die alte Progression, und unter der Steuerung nur ein
+Hinweis. Wird der Auswahlbereich stattdessen nur zugemacht, bleibt alles wie
+vorher – auch eine gewählte Vorlage kommt zurück.
+
 **Septakkorde ergänzen** – Stufen ohne Zusatz bekommen die leitereigene
 Septime: aus `I V vi IV` wird in C-Dur `Cmaj7 G7 Am7 Fmaj7`, aus `1 6 3 7`
 wird `Cmaj7 Am7 Em7 Bm7♭5`. Steht eine Dur-Stufe, die in der Tonart gar nicht
