@@ -1,0 +1,346 @@
+/* Akkord-Progressionen – gesamtes Design an einer Stelle */
+
+:root {
+  color-scheme: light dark;
+
+  --hintergrund: #f6f6f4;
+  --flaeche: #ffffff;
+  --rand: #e0e0dc;
+  --text: #1b1c20;
+  --text-leise: #63646b;
+
+  --akzent: #e0621d;      /* Grundton */
+  --akzent-hell: #fbe6d8;
+  --ton: #2f5fbf;         /* Akkordton */
+  --ton-hell: #dde6f8;
+
+  --taste-weiss: #ffffff;
+  --taste-linie: #c9c9c4;
+  --taste-schwarz: #26272c;
+
+  --radius: 12px;
+  --breite: 1080px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --hintergrund: #131418;
+    --flaeche: #1c1d23;
+    --rand: #2e3037;
+    --text: #ececef;
+    --text-leise: #9a9ca6;
+
+    --akzent: #f0803f;
+    --akzent-hell: #4a2a15;
+    --ton: #6c94e8;
+    --ton-hell: #1e2a45;
+
+    --taste-weiss: #e8e8ea;
+    --taste-linie: #3a3c44;
+    --taste-schwarz: #0e0f12;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--hintergrund);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* ---------- Kopf ---------- */
+
+.kopf {
+  max-width: var(--breite);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 5vw, 3rem) clamp(1rem, 4vw, 2rem) 0;
+}
+
+.kopf h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  letter-spacing: -0.02em;
+}
+
+.kopf__unter {
+  margin: 0.45rem 0 0;
+  max-width: 46rem;
+  color: var(--text-leise);
+  font-size: clamp(0.95rem, 2.2vw, 1.05rem);
+}
+
+/* ---------- Steuerung ---------- */
+
+main {
+  max-width: var(--breite);
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2rem) 4rem;
+}
+
+.steuerung {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem 1.25rem;
+  margin: clamp(1.5rem, 4vw, 2.25rem) 0;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+}
+
+.feld--breit { grid-column: 1 / -1; }
+.feld--zeile { grid-column: 1 / -1; }
+@media (min-width: 760px) {
+  .feld--breit { grid-column: span 1; }
+  .steuerung { grid-template-columns: 1fr 2fr 1fr; }
+}
+
+.feld label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.feld select,
+.feld input {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+  font-size: 1.05rem;
+  color: var(--text);
+  background: var(--hintergrund);
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  min-height: 44px; /* bequem antippbar */
+}
+
+.feld select { cursor: pointer; }
+
+.hinweis {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text-leise);
+}
+
+/* Umschalter für die Notennamen – sieht bewusst nicht wie ein Eingabefeld aus */
+.feld .schalter {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.75rem 0;
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.feld .schalter input {
+  flex: none;
+  width: 1.3rem;
+  height: 1.3rem;
+  min-height: 0;
+  margin: 0;
+  accent-color: var(--ton);
+  cursor: pointer;
+}
+
+.hinweis code {
+  padding: 0.05em 0.35em;
+  font-size: 0.95em;
+  background: var(--hintergrund);
+  border: 1px solid var(--rand);
+  border-radius: 4px;
+}
+
+:focus-visible {
+  outline: 3px solid var(--ton);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- Ergebnis ---------- */
+
+.ergebnis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 1rem;
+}
+
+/* Zusammenfassung über den Karten – volle Breite, auch im Ausdruck sichtbar */
+.ergebnis__kopf {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-leise);
+}
+
+.ergebnis__kopf strong { color: var(--text); }
+
+.akkord {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: clamp(0.9rem, 2.5vw, 1.15rem);
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+}
+
+.akkord__kopf {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.akkord__stufe {
+  min-width: 2.1rem;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-leise);
+  background: var(--hintergrund);
+  border: 1px solid var(--rand);
+  border-radius: 6px;
+}
+
+.akkord__name {
+  margin: 0;
+  font-size: clamp(1.5rem, 5vw, 1.9rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.akkord__toene {
+  margin: -0.4rem 0 0;
+  font-size: 0.95rem;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+}
+
+.akkord__tastatur {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Fehlerkarte */
+.akkord--fehler .akkord__name { font-size: 1.2rem; }
+.akkord--fehler { border-style: dashed; border-color: var(--akzent); }
+.akkord--fehler .akkord__toene { color: var(--akzent); }
+
+.leer {
+  padding: 2rem 1rem;
+  color: var(--text-leise);
+  text-align: center;
+  background: var(--flaeche);
+  border: 1px dashed var(--rand);
+  border-radius: var(--radius);
+}
+
+/* ---------- Klaviertastatur ---------- */
+
+.taste-weiss { fill: var(--taste-weiss); stroke: var(--taste-linie); stroke-width: 1; }
+.taste-schwarz { fill: var(--taste-schwarz); stroke: var(--taste-schwarz); stroke-width: 1; }
+
+.is-grundton.taste-weiss { fill: var(--akzent); }
+.is-grundton.taste-schwarz { fill: var(--akzent); }
+.is-akkordton.taste-weiss { fill: var(--ton); }
+.is-akkordton.taste-schwarz { fill: var(--ton); }
+
+.is-obere { opacity: 0.4; }
+
+/* Weiße Tasten sind in beiden Farbmodi hell, deshalb ist die Beschriftung
+   hier ein fester dunkler Grauton statt einer Themenfarbe. */
+.tasten-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-anchor: middle;
+  fill: #55575f;
+  pointer-events: none;
+}
+
+.tasten-label--aktiv { fill: #ffffff; }
+
+/* ---------- Legende ---------- */
+
+.legende {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rand);
+}
+
+.legende__titel {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.legende__liste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+  color: var(--text-leise);
+}
+
+.legende__liste li { display: flex; align-items: center; gap: 0.5rem; }
+
+.punkt {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 3px;
+  border: 1px solid var(--rand);
+}
+.punkt--grundton { background: var(--akzent); }
+.punkt--ton { background: var(--ton); }
+.punkt--oktave { background: var(--ton); opacity: 0.4; }
+
+/* ---------- Fuß ---------- */
+
+.fuss {
+  max-width: var(--breite);
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2rem) 3rem;
+  font-size: 0.8rem;
+  color: var(--text-leise);
+}
+
+.fuss p { margin: 0; }
+
+.noscript {
+  max-width: var(--breite);
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+  color: var(--akzent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+@media print {
+  .steuerung { display: none; }
+  .akkord { break-inside: avoid; }
+}
