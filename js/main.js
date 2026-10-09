@@ -132,11 +132,9 @@
   var notenStil = 'international';
   var septAkkorde = false;
   var griffModus = false;
-  /* Die Hör-Knöpfe stehen anfangs auf jeder Karte; wer sie nicht braucht,
-     blendet sie aus. */
-  var hoerKnoepfe = true;
-  /* Der Fingersatz ist die Ausnahme: er steht erst auf den Tasten, wenn man
-     ihn haben will. */
+  /* Die Hör-Knöpfe und der Fingersatz stehen erst da, wenn man sie haben
+     will; die Karten sind von Anfang an ruhig. */
+  var hoerKnoepfe = false;
   var fingerModus = false;
 
   function notenName(buchstabe, vorzeichen) {
@@ -2513,7 +2511,7 @@
                 (notenStil === 'deutsch' ? '&noten=deutsch' : '') +
                 (septAkkorde ? '&sept=1' : '') +
                 (griffModus ? '&griff=gitarre' : '') +
-                (hoerKnoepfe ? '' : '&hoeren=0') +
+                (hoerKnoepfe ? '&hoeren=1' : '') +
                 (fingerModus ? '&fingersatz=1' : '');
       window.history.replaceState(null, '', neu);
     } catch (e) { /* bei file:// nicht überall erlaubt */ }
@@ -2618,10 +2616,11 @@
   }
   elGitarre.checked = griffModus;
 
-  /* Die Hör-Knöpfe sind angeknipst, solange nichts anderes gesagt wurde –
-     deshalb steht in Adresse und Speicher nur, wenn sie ausgeblendet sind. */
-  if (ausAdresse.hoeren === '0' || (!ausAdresse.hoeren && gemerkt && gemerkt.hoeren === false)) {
-    hoerKnoepfe = false;
+  /* Die Hör-Knöpfe stehen nur da, wenn man sie angeknipst hat – deshalb steht
+     in Adresse und Speicher auch nur dann etwas. Ein alter Link mit
+     `hoeren=0` blendet sie weiterhin aus. */
+  if (ausAdresse.hoeren === '1' || (!ausAdresse.hoeren && gemerkt && gemerkt.hoeren)) {
+    hoerKnoepfe = true;
   }
   elHoeren.checked = hoerKnoepfe;
 

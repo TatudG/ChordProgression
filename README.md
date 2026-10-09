@@ -117,9 +117,10 @@ weiterbearbeiten lässt. Angeboten werden je nach Abfolge: *Trugschluss*,
 *Offen enden*, *Moll-Subdominante*, *Zwischendominante* und *Durchgang im Bass*.
 Passt nichts davon, bleibt der Abschnitt verborgen.
 
-**Anhören** – unter jeder Karte steht ein Knopf *▶ Anhören*; er spielt den
-Akkord so, wie er dasteht: die Töne von unten nach oben, beim Slash-Akkord mit
-dem Basston zuunterst. Für das Gehör lässt sich so nachvollziehen, wie eine
+**Anhören** – mit angeknipsten Hör-Knöpfen steht unter jeder Karte ein Knopf
+*▶ Anhören*; er spielt den Akkord so, wie er dasteht: die Töne von unten nach
+oben, beim Slash-Akkord mit dem Basston zuunterst. Für das Gehör lässt sich so
+nachvollziehen, wie eine
 Stufe in der Tonart klingt, und der Unterschied zwischen zwei Karten ist
 unmittelbar zu hören. Der Klang entsteht im Browser (Web Audio), es wird nichts
 nachgeladen. **Nur auf Klick**: beim Laden der Seite und beim Tippen erklingt
@@ -128,9 +129,9 @@ Ein zweiter Klick löst den ersten Klang ab, statt beide übereinander zu legen.
 Unerkannte Karten haben keinen Knopf, weil es dort nichts zu hören gibt.
 
 **Anhören-Knöpfe** – der Schalter neben den Notennamen blendet die
-Hör-Knöpfe aus und wieder ein. Von Anfang an stehen sie auf jeder Karte; wer
-sie nicht braucht, macht damit die Karten wieder so ruhig wie vorher. Beim
-Ausblenden verstummt ein noch klingender Ton.
+Hör-Knöpfe ein und wieder aus. Von Anfang an ist er aus, die Karten stehen
+also ruhig da; wer die Akkorde hören will, knipst ihn an. Beim Ausblenden
+verstummt ein noch klingender Ton.
 
 **Fingersatz** – der Schalter daneben legt die Finger der rechten Hand auf die
 Tasten: `1` ist der Daumen, `5` der kleine Finger. Er ist von Anfang an aus.
@@ -146,7 +147,7 @@ gegriffen wird.
 
 Tonart, Progression, Schreibweise sowie Sept-, Gitarren-, Anhören- und
 Fingersatz-Schalter landen in der Adresse (`?tonart=G-Dur&p=…&sept=1&griff=gitarre`,
-beim Ausblenden `&hoeren=0`, mit Fingersatz `&fingersatz=1`) und im
+mit Hör-Knöpfen `&hoeren=1`, mit Fingersatz `&fingersatz=1`) und im
 Browserspeicher. Ein kopierter Link stellt also genau denselben Zustand wieder
 her.
 
