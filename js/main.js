@@ -131,6 +131,7 @@
      andere Sprachen B♭ nennen; das englische B heißt dort "H". */
   var notenStil = 'international';
   var septAkkorde = false;
+  var griffModus = false;
 
   function notenName(buchstabe, vorzeichen) {
     if (notenStil === 'deutsch' && buchstabe === 'B') {
@@ -466,6 +467,16 @@
            : rohdaten.vorzeichen > 0 ? false
            : null;
 
+    /* Welche Töne bestimmen den Klang? Quinte und Undezime dürfen fehlen –
+       Gitarrengriffe lassen sie regelmäßig weg, alles andere nicht. */
+    var pflicht = [];
+    function merkePflicht(iv) {
+      var pc = (((rohdaten.grundton + iv) % 12) + 12) % 12;
+      if (pflicht.indexOf(pc) === -1) { pflicht.push(pc); }
+    }
+    info.intervalle.forEach(function (iv) { if (iv !== 7 && iv !== 17) { merkePflicht(iv); } });
+    if (pflicht.length === 0) { info.intervalle.forEach(merkePflicht); } /* nur Grundton + Quinte */
+
     var symbol = akkordGrundtonName(rohdaten.buchstabe, rohdaten.grundton) + info.suffix;
     var bassPc = null;
 
@@ -490,8 +501,19 @@
       namenNachPc: namenNachPc,
       grundtonPc: rohdaten.grundton,
       bassPc: bassPc,
+      pflicht: pflicht,
+      typ: rohdaten.typ,
       be: be
     };
+  }
+
+  /* Welche Rolle spielt ein Ton in diesem Akkord? Bestimmt die Farbe in
+     Klaviatur und Gitarrengriff. */
+  function rolle(akkord, pc) {
+    if (akkord.bassPc !== null && pc === akkord.bassPc && pc !== akkord.grundtonPc) {
+      return 'bass';
+    }
+    return pc === akkord.grundtonPc ? 'grundton' : 'akkordton';
   }
 
   /* Name einer Taste ohne Akkordbezug – hier zählt nur die Tonart */
@@ -548,15 +570,9 @@
       return akkord.namenNachPc[pc] || tasteName(pc, akkord.be);
     }
 
-    /* Grundton und Basston farblich abgesetzt, zweite Oktave schwächer.
-       Der Basston hat Vorrang – außer er ist ohnehin der Grundton. */
+    /* Grundton und Basston farblich abgesetzt, zweite Oktave schwächer */
     function klasse(pc, untereOktave) {
-      var teile = ['is-akkordton'];
-      if (akkord.bassPc !== null && pc === akkord.bassPc && pc !== akkord.grundtonPc) {
-        teile = ['is-bass'];
-      } else if (pc === akkord.grundtonPc) {
-        teile = ['is-grundton'];
-      }
+      var teile = ['is-' + rolle(akkord, pc)];
       if (!untereOktave) { teile.push('is-obere'); }
       return teile.join(' ');
     }
@@ -613,6 +629,312 @@
   }
 
   /* ---------------------------------------------------------------
+     4b. Gitarrengriff
+     --------------------------------------------------------------- */
+
+  /* Leere Saiten von der tiefsten zur höchsten, als MIDI-Nummern (E2 … E4) */
+  var SAITEN_MIDI = [40, 45, 50, 55, 59, 64];
+
+  var GRIFF_WEITE    = 4;  /* größter Abstand zwischen zwei gegriffenen Bünden */
+  var GRIFF_MAX_BUND = 12; /* weiter oben am Hals wird nicht gesucht */
+
+  function pcAusMidi(midi) { return ((midi % 12) + 12) % 12; }
+
+  /* Die Griffbilder, die man aus jedem Liederbuch kennt, je Akkordtyp und
+     Grundton (0 = C … 11 = B). Notiert von der tiefsten zur höchsten Saite,
+     'x' heißt „nicht anschlagen". Nur einstellige Bünde – deshalb steht die
+     Ziffernfolge als Zeichenkette da.
+     Die Suche unten findet für diese Akkorde zwar auch gültige Griffe, aber
+     oft ungewohnte; hier steht der Griff, den eine Gitarristin erwartet. */
+  var GRIFFBILDER = {
+    maj: {
+      0:  'x32010', 1:  'x46664', 2:  'xx0232', 3:  'x65343',
+      4:  '022100', 5:  '133211', 6:  '244322', 7:  '320003',
+      8:  '466544', 9:  'x02220', 10: 'x13331', 11: 'x24442'
+    },
+    min: {
+      0:  'x35543', 1:  'x46654', 2:  'xx0231', 3:  'x68876',
+      4:  '022000', 5:  '133111', 6:  '244222', 7:  '355333',
+      8:  '466444', 9:  'x02210', 10: 'x13321', 11: 'x24432'
+    }
+  };
+
+  function musterZuFrets(muster) {
+    return muster.split('').map(function (z) { return z === 'x' ? null : parseInt(z, 10); });
+  }
+
+  /* Prüft ein Griffmuster aus der Tabelle nach denselben Regeln wie die
+     Suche. Dadurch kann ein Tippfehler in der Tabelle keinen falschen Akkord
+     erzeugen: passt das Muster nicht, rechnet die Suche selbst weiter. Für
+     Slash-Akkorde passt kein Tabellengriff, weil deren Basston ein anderer
+     ist – auch dann übernimmt die Suche. */
+  function griffPasst(frets, akkord) {
+    var imAkkord = {}, zahler = [], klingt = 0, tiefste = null, i, s;
+    akkord.pcs.forEach(function (pc) { imAkkord[pc] = true; });
+    for (i = 0; i < 12; i++) { zahler[i] = 0; }
+
+    for (s = 0; s < 6; s++) {
+      var f = frets[s];
+      if (f === null) { continue; }
+      var pitch = SAITEN_MIDI[s] + f;
+      var pc = pcAusMidi(pitch);
+      if (!imAkkord[pc]) { return false; }
+      zahler[pc]++;
+      klingt++;
+      if (tiefste === null || pitch < tiefste) { tiefste = pitch; }
+    }
+    if (klingt < 3) { return false; }
+    for (i = 0; i < akkord.pflicht.length; i++) {
+      if (!zahler[akkord.pflicht[i]]) { return false; }
+    }
+    var erwartet = akkord.bassPc === null ? akkord.grundtonPc : akkord.bassPc;
+    return pcAusMidi(tiefste) === erwartet;
+  }
+
+  /* Sucht einen greifbaren Griff. Alle Pflicht-Töne müssen klingen, keine
+     Saite darf einen akkordfremden Ton spielen, und der Basston muss der
+     tiefste klingende Ton sein – nur so stimmt ein Slash-Akkord.
+     Unter allen Möglichkeiten gewinnt die bequemste: offene Saiten und tiefe
+     Lagen sind angenehmer als ein Barregriff weiter oben am Hals. */
+  function sucheGriff(akkord, bassGenau) {
+    var imAkkord = {};
+    akkord.pcs.forEach(function (pc) { imAkkord[pc] = true; });
+
+    var bassPc = akkord.bassPc === null ? akkord.grundtonPc : akkord.bassPc;
+
+    /* Je Saite kommen nur Bünde infrage, die einen Akkordton treffen */
+    var moeglich = SAITEN_MIDI.map(function (midi) {
+      var liste = [null];
+      for (var f = 0; f <= GRIFF_MAX_BUND; f++) {
+        if (imAkkord[pcAusMidi(midi + f)]) { liste.push(f); }
+      }
+      return liste;
+    });
+
+    var frets = [null, null, null, null, null, null];
+    var zahler = [];                              /* wie oft jeder Halbton klingt */
+    for (var i = 0; i < 12; i++) { zahler[i] = 0; }
+
+    var beste = null;
+
+    /* Je kleiner der Wert, desto bequemer der Griff. Die Gewichte sind
+       Erfahrungswerte: tiefe Lage und kleine Spanne sind angenehm, eine
+       stumme Saite mitten im Griff ist es gar nicht (die muss der Anschlag
+       treffen, nicht die Greifhand), und ein voller Klang ist besser als
+       drei klingende Saiten. */
+    function bewerte() {
+      var klingt = 0, gegriffen = 0, tiefster = 99, hoechster = 0, buende = {};
+      var erste = -1, letzte = -1;
+
+      frets.forEach(function (f, i) {
+        if (f === null) { return; }
+        klingt++;
+        if (erste === -1) { erste = i; }
+        letzte = i;
+        if (f === 0) { return; }
+        gegriffen++;
+        buende[f] = true;
+        if (f < tiefster) { tiefster = f; }
+        if (f > hoechster) { hoechster = f; }
+      });
+
+      if (klingt < 3) { return Infinity; }                     /* drei Saiten müssen klingen */
+      if (Object.keys(buende).length > 4) { return Infinity; } /* mehr Finger gibt es nicht */
+
+      var stummKosten = 0;
+      frets.forEach(function (f, i) {
+        if (f !== null) { return; }
+        stummKosten += (i > erste && i < letzte) ? 16 : (i < erste ? 4 : 10);
+      });
+
+      /* Sprung zwischen zwei benachbarten gegriffenen Saiten: ein weiter Weg
+         für einen Finger ist schwerer als die Gesamtspanne verrät. Leere
+         Saiten zählen nicht mit – von einer leeren Saite auf Bund 2 und
+         zurück greift sich von selbst. */
+      var sprung = 0, vorher = null;
+      frets.forEach(function (f) {
+        if (f === null || f === 0) { return; }
+        if (vorher !== null) { sprung += Math.abs(f - vorher); }
+        vorher = f;
+      });
+
+      var lage = tiefster === 99 ? 0 : tiefster;
+      var weite = hoechster === 0 ? 0 : hoechster - tiefster;
+
+      return lage * 6 + weite * 5 + sprung * 1.5 + stummKosten
+             + gegriffen * 0.2 - klingt * 2;
+    }
+
+    function rek(s, tiefstePitch, minBund, maxBund) {
+      if (s === 6) {
+        for (var k = 0; k < akkord.pflicht.length; k++) {
+          if (!zahler[akkord.pflicht[k]]) { return; }
+        }
+        var bass = pcAusMidi(tiefstePitch);
+        if (bassGenau ? bass !== bassPc : !imAkkord[bass]) { return; }
+
+        var wert = bewerte();
+        if (wert !== Infinity && (beste === null || wert < beste.wert)) {
+          beste = { frets: frets.slice(), wert: wert };
+        }
+        return;
+      }
+
+      var kandidaten = moeglich[s];
+      for (var c = 0; c < kandidaten.length; c++) {
+        var f = kandidaten[c];
+        if (f !== null && f !== 0) {
+          if (minBund < 99 && f - minBund > GRIFF_WEITE) { continue; }
+          if (maxBund > 0 && maxBund - f > GRIFF_WEITE) { continue; }
+        }
+
+        var pitch = f === null ? null : SAITEN_MIDI[s] + f;
+        var pc = pitch === null ? null : pcAusMidi(pitch);
+
+        frets[s] = f;
+        if (pc !== null) { zahler[pc]++; }
+        rek(s + 1,
+            pitch === null ? tiefstePitch
+                           : (tiefstePitch === null ? pitch : Math.min(tiefstePitch, pitch)),
+            f === null || f === 0 ? minBund : Math.min(minBund, f),
+            f === null || f === 0 ? maxBund : Math.max(maxBund, f));
+        if (pc !== null) { zahler[pc]--; }
+        frets[s] = null;
+      }
+    }
+
+    rek(0, null, 99, 0);
+    return beste;
+  }
+
+  var GRIFF_SAITENABSTAND = 26;
+  var GRIFF_BUNDABSTAND   = 30;
+  var GRIFF_RAND          = 32;
+  var GRIFF_OBEN          = 46;   /* Höhe der ersten Linie unter den Zeichen */
+
+  function buildGitarre(akkord) {
+    /* Bekannte Griffe zuerst; sonst mit dem richtigen Basston suchen, sonst
+       ohne diese Bedingung. */
+    var frets = null;
+    var tabelle = GRIFFBILDER[akkord.typ];
+    if (tabelle && tabelle[akkord.grundtonPc] !== undefined) {
+      var muster = musterZuFrets(tabelle[akkord.grundtonPc]);
+      if (griffPasst(muster, akkord)) { frets = muster; }
+    }
+    if (!frets) {
+      var griff = sucheGriff(akkord, true) || sucheGriff(akkord, false);
+      if (!griff) { return null; }
+      frets = griff.frets;
+    }
+    var tiefster = 99, hoechster = 0, hatLeer = false;
+    frets.forEach(function (f) {
+      if (f === null) { return; }
+      if (f === 0) { hatLeer = true; }
+      else { tiefster = Math.min(tiefster, f); hoechster = Math.max(hoechster, f); }
+    });
+    if (tiefster === 99) { tiefster = 0; }
+
+    /* Kommt eine leere Saite vor, beginnt das Bild am Sattel – sonst dort,
+       wo der Griff liegt. */
+    var start = (hatLeer || tiefster <= 1) ? 1 : tiefster;
+    var reihen = Math.min(6, Math.max(5, hoechster - start + 2));
+
+    var breite = GRIFF_SAITENABSTAND * 5 + GRIFF_RAND * 2;
+    var unten = GRIFF_OBEN + reihen * GRIFF_BUNDABSTAND;
+
+    function xVon(s) { return GRIFF_RAND + s * GRIFF_SAITENABSTAND; }
+    function yVon(f) { return GRIFF_OBEN + (f - start + 0.5) * GRIFF_BUNDABSTAND; }
+
+    /* Liegt der Griff nicht am Sattel, steht links die Lagenangabe („2. Bund").
+       Dafür beginnt die Zeichenfläche links vor der Null – sonst würde die
+       Angabe am Rand abgeschnitten. */
+    var links = start > 1 ? 56 : 0;
+
+    var svg = svgElement('svg', {
+      viewBox: (-links) + ' 0 ' + (breite + links) + ' ' + (unten + 12),
+      'class': 'akkord__griff',
+      role: 'img',
+      'aria-label': 'Gitarrengriff ' + akkord.symbol + ': Saiten von tief nach hoch ' +
+        frets.map(function (f) { return f === null ? 'x' : String(f); }).join(', ')
+    });
+
+    /* Saiten und Bünde */
+    for (var s = 0; s < 6; s++) {
+      svg.appendChild(svgElement('line', {
+        x1: xVon(s), y1: GRIFF_OBEN, x2: xVon(s), y2: unten, 'class': 'griff-saite'
+      }));
+    }
+    for (var r = 0; r <= reihen; r++) {
+      var y = GRIFF_OBEN + r * GRIFF_BUNDABSTAND;
+      svg.appendChild(svgElement('line', {
+        x1: xVon(0), y1: y, x2: xVon(5), y2: y,
+        'class': (r === 0 && start === 1) ? 'griff-sattel' : 'griff-bund'
+      }));
+    }
+
+    /* Bundangabe, wenn der Griff nicht am Sattel beginnt */
+    if (start > 1) {
+      var lage = svgElement('text', {
+        x: GRIFF_RAND - 10, y: GRIFF_OBEN + GRIFF_BUNDABSTAND * 0.5 + 4,
+        'class': 'griff-lage', 'text-anchor': 'end'
+      });
+      lage.textContent = start + '. Bund';
+      svg.appendChild(lage);
+    }
+
+    /* Zeichen über den Saiten: x = nicht anschlagen, o = leer */
+    frets.forEach(function (f, i) {
+      var zeichen = svgElement('text', {
+        x: xVon(i), y: GRIFF_OBEN - 14, 'class': 'griff-zeichen'
+      });
+      zeichen.textContent = f === null ? '×' : (f === 0 ? '○' : '');
+      if (zeichen.textContent) { svg.appendChild(zeichen); }
+    });
+
+    /* Balken: der tiefste Ton und ein höherer im selben Bund, alle Saiten
+       dazwischen mindestens so hoch gegriffen – das ist der übliche Barregriff. */
+    var tiefsteSaite = -1;
+    for (var s2 = 0; s2 < 6; s2++) { if (frets[s2] !== null) { tiefsteSaite = s2; break; } }
+
+    var balken = null;
+    var balkenBund = frets[tiefsteSaite];
+    if (balkenBund > 0) {
+      var letzte = -1, passt = true;
+      for (var s3 = tiefsteSaite + 1; s3 < 6; s3++) {
+        if (frets[s3] === balkenBund) { letzte = s3; }
+        else if (frets[s3] !== null && frets[s3] < balkenBund) { passt = false; break; }
+      }
+      if (passt && letzte - tiefsteSaite >= 2) {
+        balken = { von: tiefsteSaite, bis: letzte };
+      }
+    }
+
+    /* Punkte für die gegriffenen Töne */
+    frets.forEach(function (f, i) {
+      if (f === null || f === 0) { return; }
+      var pc = pcAusMidi(SAITEN_MIDI[i] + f);
+      var farbe = 'griff-punkt--' + rolle(akkord, pc);
+
+      if (balken && f === balkenBund && i >= balken.von && i <= balken.bis) {
+        if (i === balken.von) {          /* der Balken zeichnet die ganze Reihe */
+          svg.appendChild(svgElement('rect', {
+            x: xVon(balken.von) - 9, y: yVon(f) - 9,
+            width: xVon(balken.bis) - xVon(balken.von) + 18, height: 18, rx: 9,
+            'class': 'griff-balken ' + farbe
+          }));
+        }
+        return;
+      }
+
+      svg.appendChild(svgElement('circle', {
+        cx: xVon(i), cy: yVon(f), r: 9, 'class': 'griff-punkt ' + farbe
+      }));
+    });
+
+    return svg;
+  }
+
+  /* ---------------------------------------------------------------
      5. Seite zeichnen
      --------------------------------------------------------------- */
 
@@ -622,6 +944,16 @@
   var elErgebnis = document.getElementById('ergebnis');
   var elNotennamen = document.getElementById('notennamen');
   var elSept = document.getElementById('septakkorde');
+  var elGitarre = document.getElementById('gitarre');
+  var elLegendeKlavier = document.getElementById('legende-klavier');
+  var elLegendeGitarre = document.getElementById('legende-gitarre');
+
+  /* Die Legende erklärt die Farben – und die sind in beiden Ansichten
+     dieselben, nur die vierte Zeile gilt bloß fürs Klavier. */
+  function zeigeLegende() {
+    elLegendeKlavier.hidden = griffModus;
+    elLegendeGitarre.hidden = !griffModus;
+  }
 
   function holeTonart(id) {
     for (var i = 0; i < TONARTEN.length; i++) {
@@ -680,7 +1012,10 @@
     toene.textContent = akkord.toene.join(' · ');
     box.appendChild(toene);
 
-    box.appendChild(buildTastatur(akkord));
+    /* Klavier ist die Hauptansicht, Gitarre die Alternative. Findet sich
+       wider Erwarten kein Griff, bleibt die Klaviatur stehen. */
+    var bild = griffModus ? buildGitarre(akkord) : null;
+    box.appendChild(bild || buildTastatur(akkord));
     return box;
   }
 
@@ -726,7 +1061,8 @@
   function merke(ta, progression) {
     try {
       window.localStorage.setItem(SPEICHER, JSON.stringify({
-        tonart: ta.id, progression: progression, noten: notenStil, sept: septAkkorde
+        tonart: ta.id, progression: progression, noten: notenStil,
+        sept: septAkkorde, griff: griffModus
       }));
     } catch (e) { /* privater Modus o. Ä. – dann eben nicht */ }
 
@@ -735,7 +1071,8 @@
       var neu = '?tonart=' + encodeURIComponent(ta.id) +
                 '&p=' + encodeURIComponent(progression.trim()) +
                 (notenStil === 'deutsch' ? '&noten=deutsch' : '') +
-                (septAkkorde ? '&sept=1' : '');
+                (septAkkorde ? '&sept=1' : '') +
+                (griffModus ? '&griff=gitarre' : '');
       window.history.replaceState(null, '', neu);
     } catch (e) { /* bei file:// nicht überall erlaubt */ }
   }
@@ -745,10 +1082,10 @@
       var p = new URLSearchParams(window.location.search);
       return {
         tonart: p.get('tonart'), progression: p.get('p'),
-        noten: p.get('noten'), sept: p.get('sept')
+        noten: p.get('noten'), sept: p.get('sept'), griff: p.get('griff')
       };
     } catch (e) {
-      return { tonart: null, progression: null, noten: null, sept: null };
+      return { tonart: null, progression: null, noten: null, sept: null, griff: null };
     }
   }
 
@@ -823,6 +1160,11 @@
   }
   elSept.checked = septAkkorde;
 
+  if (ausAdresse.griff === 'gitarre' || (!ausAdresse.griff && gemerkt && gemerkt.griff)) {
+    griffModus = true;
+  }
+  elGitarre.checked = griffModus;
+
   fuelleTonarten();
   fuelleVorlagen();
 
@@ -836,6 +1178,7 @@
   elTonart.value = holeTonart(startTonart).id;
   elProgression.value = startProgression;
   setzeVorlage(startProgression);
+  zeigeLegende();
 
   elTonart.addEventListener('change', function () {
     setzeVorlage(elProgression.value);
@@ -862,6 +1205,12 @@
 
   elSept.addEventListener('change', function () {
     septAkkorde = elSept.checked;
+    zeichne();
+  });
+
+  elGitarre.addEventListener('change', function () {
+    griffModus = elGitarre.checked;
+    zeigeLegende();
     zeichne();
   });
 

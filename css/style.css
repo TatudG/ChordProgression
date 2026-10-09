@@ -290,6 +290,36 @@ main {
 
 .tasten-label--aktiv { fill: #ffffff; }
 
+/* ---------- Gitarrengriff ---------- */
+
+.akkord__griff {
+  display: block;
+  width: 100%;
+  max-width: 230px;
+  height: auto;
+  margin: 0 auto;
+}
+
+.griff-saite { stroke: var(--taste-schwarz); stroke-width: 1.4; }
+.griff-bund { stroke: var(--rand); stroke-width: 1.2; }
+.griff-sattel { stroke: var(--text); stroke-width: 4; }
+
+.griff-zeichen {
+  font-size: 14px;
+  font-weight: 600;
+  text-anchor: middle;
+  fill: var(--text-leise);
+}
+
+.griff-lage { font-size: 12px; font-weight: 600; fill: var(--text-leise); }
+
+.griff-punkt--grundton { fill: var(--akzent); }
+.griff-punkt--akkordton { fill: var(--ton); }
+.griff-punkt--bass { fill: var(--bass); }
+.griff-balken.griff-punkt--grundton { fill: var(--akzent); }
+.griff-balken.griff-punkt--akkordton { fill: var(--ton); }
+.griff-balken.griff-punkt--bass { fill: var(--bass); }
+
 /* ---------- Legende ---------- */
 
 .legende {
@@ -320,6 +350,9 @@ main {
 
 .legende__liste li { display: flex; align-items: center; gap: 0.5rem; }
 
+/* display:flex würde das hidden-Attribut sonst aushebeln */
+.legende__liste[hidden] { display: none; }
+
 .punkt {
   width: 0.85rem;
   height: 0.85rem;
@@ -329,6 +362,7 @@ main {
 .punkt--grundton { background: var(--akzent); }
 .punkt--ton { background: var(--ton); }
 .punkt--bass { background: var(--bass); }
+.punkt--leer { background: transparent; }
 .punkt--oktave { background: var(--ton); opacity: 0.4; }
 
 /* ---------- Fuß ---------- */

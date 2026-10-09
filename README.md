@@ -1,8 +1,9 @@
 # Akkord-Progressionen
 
 Eine einzelne Webseite: Tonart wählen, Progression eingeben – jeder Akkord wird
-mit Name, Tönen und Klaviertastatur angezeigt. Läuft auf Rechner und Handy,
-braucht keinen Server und keine Internetverbindung.
+mit Name, Tönen und Klaviertastatur angezeigt, auf Wunsch stattdessen mit
+Gitarrengriff. Läuft auf Rechner und Handy, braucht keinen Server und keine
+Internetverbindung.
 
 ## Öffnen
 
@@ -56,16 +57,23 @@ der übliche Zwischendominant.
 `B♭` nennen, und das englische `B` heißt `H`. Der Umschalter gilt für Anzeige
 *und* Eingabe: mit aktivem Schalter liefert `B` den Ton B♭ und `H` den Ton B.
 
-Tonart, Progression, Schreibweise und Sept-Umschalter landen in der Adresse
-(`?tonart=G-Dur&p=…&sept=1`) und im Browserspeicher. Ein kopierter Link stellt
-also genau denselben Zustand wieder her.
+**Gitarrengriffe statt Klaviatur** – zeigt jede Karte als Griffbild statt als
+Tastatur. Die Klaviatur bleibt die Hauptansicht; ohne den Schalter ändert sich
+nichts. Im Bild ist der Grundton orange, die übrigen Akkordtöne blau, der
+Basston eines Slash-Akkords grün. `○` heißt leere Saite, `×` nicht anschlagen;
+ein Balken ist ein Barregriff, und links steht bei Griffen weiter oben am Hals
+die Lage („2. Bund").
+
+Tonart, Progression, Schreibweise sowie Sept- und Gitarren-Umschalter landen in
+der Adresse (`?tonart=G-Dur&p=…&sept=1&griff=gitarre`) und im Browserspeicher.
+Ein kopierter Link stellt also genau denselben Zustand wieder her.
 
 ## Aufbau
 
 ```
 index.html      die Seite
 css/style.css   das gesamte Design (Farben und Maße als CSS-Variablen)
-js/main.js      Musiktheorie, Eingabe-Parser und Tastatur-Zeichnung
+js/main.js      Musiktheorie, Eingabe-Parser, Tastatur- und Griff-Zeichnung
 ```
 
 Kein Framework, kein Bundler, keine externen Schriften oder Bibliotheken.
@@ -83,6 +91,22 @@ Kein Framework, kein Bundler, keine externen Schriften oder Bibliotheken.
 - Die Klaviatur zeigt zwei Oktaven (C4–B5). Der Grundton ist orange, die
   übrigen Akkordtöne blau, der Basston grün; dieselben Töne eine Oktave
   höher blasser.
+
+### Wie die Gitarrengriffe entstehen
+
+- Für die 24 Dur- und Moll-Dreiklänge stehen die gängigen Griffbilder fest in
+  einer Tabelle (`GRIFFBILDER` in `js/main.js`) – das sind die Griffe, die man
+  aus dem Liederbuch kennt.
+- Für alles andere (Septakkorde, sus, Alterationen, Slash-Akkorde) sucht die
+  Seite selbst: jede Saite darf nur einen Akkordton spielen, die
+  kennzeichnenden Töne (Terz, Septime, Alteration) müssen klingen, die Quinte
+  darf fehlen, der Basston muss der tiefste klingende Ton sein. Unter allen
+  Möglichkeiten gewinnt die bequemste – offene Saiten und tiefe Lagen sind
+  angenehmer als ein Barregriff weit oben am Hals.
+- Jedes Tabellenmuster wird vor der Anzeige nach denselben Regeln geprüft.
+  Passt es nicht zum Akkord (etwa bei `C/E`, weil der Basston ein anderer ist),
+  übernimmt die Suche – ein Tippfehler in der Tabelle kann also keinen falschen
+  Akkord zeigen.
 
 ## Veröffentlichen (GitHub Pages)
 
@@ -107,3 +131,5 @@ nicht ins Netz.
 - Umkehrungen auf der Tastatur tatsächlich in der richtigen Lage zeigen,
   statt nur den Basston zu markieren
 - Töne weglassen (`C(no3)`) und Alterationen wie `7♯11`
+- Andere Stimmungen (Drop D, Kapodaster) und ein Umschalter zwischen mehreren
+  Griffvarianten je Akkord
