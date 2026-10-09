@@ -86,7 +86,9 @@ Basston eines Slash-Akkords grün. `○` heißt leere Saite, `×` nicht anschlag
 ein Balken ist ein Barregriff, und links steht bei Griffen weiter oben am Hals
 die Lage („2. Bund").
 
-**Einordnung auf jeder Karte** – unter den Tönen stehen zwei kurze Zeilen. Die
+**Einordnung auf jeder Karte** – unter der Klaviatur stehen zwei kurze Zeilen
+(so liegen die Tastaturen aller Karten auf einer Linie, egal wie lang die Sätze
+sind). Die
 erste sagt, was der Akkord in dieser Tonart tut: *Tonika – Ruhepunkt*, *Dominante
 – erzeugt Spannung*, *Tonikaparallele*, *Subdominante – öffnet und weitet*,
 dazu die Abweichungen (*Zwischendominante*, *Moll-Subdominante*, *Lehnakkord*).

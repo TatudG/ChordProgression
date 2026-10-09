@@ -1263,9 +1263,17 @@
     toene.textContent = akkord.toene.join(' · ');
     box.appendChild(toene);
 
-    /* Was der Akkord in der Tonart tut – und was der Schritt vom vorigen
-       bewirkt. Die Funktion steht in jedem Fall da, der Schritt nur, wenn es
-       einen vorigen Akkord gibt. */
+    /* Klavier ist die Hauptansicht, Gitarre die Alternative. Findet sich
+       wider Erwarten kein Griff, bleibt die Klaviatur stehen. */
+    var bild = griffModus ? buildGitarre(akkord) : null;
+    box.appendChild(bild || buildTastatur(akkord));
+
+    /* Die Einordnung steht unter dem Bild, nicht darüber: sonst rutscht die
+       Tastatur von Karte zu Karte auf eine andere Höhe, je nachdem, wie lang
+       die Sätze sind. So liegen alle Tastaturen auf einer Linie.
+
+       Was der Akkord in der Tonart tut, steht in jedem Fall da; der Schritt
+       vom vorigen nur, wenn es einen gibt. */
     box.appendChild(einordnung('akkord__funktion',
       akkord.funktion.name, akkord.funktion.text));
 
@@ -1276,10 +1284,6 @@
       }
     }
 
-    /* Klavier ist die Hauptansicht, Gitarre die Alternative. Findet sich
-       wider Erwarten kein Griff, bleibt die Klaviatur stehen. */
-    var bild = griffModus ? buildGitarre(akkord) : null;
-    box.appendChild(bild || buildTastatur(akkord));
     return box;
   }
 
@@ -1580,14 +1584,19 @@
     { rolle: 'tonika',       name: 'Tonikaparallele',
       text: 'das Moll-Zuhause – klingt nach Tonika, nur weicher.' },
     { rolle: 'dominante',    name: 'Dominante ohne Grundton',
-      text: 'spannt wie die Dominante, schwebt aber, weil ihr Grundton fehlt.' }
+      text: 'spannt wie die Dominante, schwebt aber, weil ihr Grundton fehlt.',
+      /* Nur der verminderte Dreiklang hat den Grundton nicht – bei anderem
+         Tongeschlecht steht der Satz auf der Karte dem Klang entgegen. */
+      ohneGestalt: { name: 'Dominante',
+        text: 'sitzt auf dem Leitton – drängt zur Tonika, hier nur mit anderem Tongeschlecht.' } }
   ];
 
   var FUNKTION_MOLL = [
     { rolle: 'tonika',       name: 'Tonika',
       text: 'Ruhepunkt – hier kommt die Progression an.' },
     { rolle: 'subdominante', name: 'Subdominante',
-      text: 'die verminderte Subdominante – dunkel, leitet weiter.' },
+      text: 'die verminderte Subdominante – dunkel, leitet weiter.',
+      ohneGestalt: { text: 'auf der zweiten Stufe – dunkel, leitet weiter.' } },
     { rolle: 'tonika',       name: 'Tonikaparallele',
       text: 'die Dur-Parallele – heller als die Tonika.' },
     { rolle: 'subdominante', name: 'Subdominante',
@@ -1680,6 +1689,16 @@
       return { grad: grad, rolle: 'dominante', name: 'Moll-Dominante',
         text: 'die natürliche Moll-Dominante – ohne Leitton, sie zieht schwächer.' };
     }
+    /* Der Leitton-Akkord und die verminderte zweite Stufe sind über ihre
+       Gestalt beschrieben. Passt die Gestalt nicht, gilt nur die Aufgabe –
+       sonst behauptete die Karte etwas, was der Akkord gar nicht zeigt
+       (Fm in G♭-Dur hat seinen Grundton durchaus). */
+    if (geschlecht !== erwartetesGeschlecht && basis.ohneGestalt) {
+      return { grad: grad, rolle: basis.rolle,
+        name: basis.ohneGestalt.name || basis.name,
+        text: basis.ohneGestalt.text };
+    }
+
     return { grad: grad, rolle: basis.rolle, name: basis.name, text: basis.text };
   }
 
