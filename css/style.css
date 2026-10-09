@@ -214,14 +214,21 @@ main {
   color: var(--text-leise);
 }
 
-/* Notenschlüssel mit den Vorzeichen der Tonart. Die Höhe ist fest, die
-   Breite ergibt sich aus dem Seitenverhältnis des Bildes – so bleiben alle
-   Tonarten gleich hoch, obwohl eine mit sieben Vorzeichen breiter ist. */
+/* Notenschlüssel mit den Vorzeichen der Tonart. Die Größe steht im SVG
+   (Notenlinienabstand 10 px), damit der Schlüssel in jeder Tonart gleich
+   groß ist – das Bild ist nur so breit und hoch, wie sein Inhalt reicht. */
 .notenbild {
   flex: none;
-  height: clamp(62px, 9vw, 84px);
-  width: auto;
+  max-width: 100%;
+  height: auto;
   color: var(--text);
+}
+
+/* Notenlinien etwas leiser als die Zeichen – so bleibt der Schlüssel der
+   Blickfang. */
+.notenbild__linie {
+  stroke: var(--text-leise);
+  fill: none;
 }
 
 .akkord {

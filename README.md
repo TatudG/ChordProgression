@@ -43,6 +43,12 @@ Schreibweisen `Δ7`, `ø7`, `-`, `+`.
 Nicht erkannte Angaben erscheinen als gestrichelte Karte mit Hinweis, statt
 stillschweigend etwas Falsches zu zeigen.
 
+Hat man eine Vorlage gewählt, steht im Feld die Stufenfolge **in den Akkorden
+der Tonart**: aus `I V vi IV` wird in G♭-Dur `G♭ D♭ E♭m C♭`. Gelesen wird
+dabei weiter die Stufenfolge – deshalb wandert die Vorlage bei einem
+Tonartwechsel mit, und der Sept-Umschalter greift auch dann. Sobald man ins
+Feld tippt, gilt es als eigene Eingabe und bleibt genau so stehen, wie getippt.
+
 **Vorlage** – 37 bekannte Progressionen in sechs Gruppen (Dur, Moll,
 Septakkorde, Jazz, Blues, Basslinie) füllen das Eingabefeld. Eigene Eingaben
 setzen die Auswahl auf „eigene Eingabe" zurück.
@@ -84,7 +90,9 @@ js/main.js      Musiktheorie, Eingabe-Parser, Zeichnung von Tastatur,
                 Griffbild und Notenbild
 ```
 
-Kein Framework, kein Bundler, keine externen Schriften oder Bibliotheken.
+Kein Framework, kein Bundler, keine externen Schriften oder Bibliotheken –
+die drei Umrisse der Notenschrift sind als Pfaddaten eingebettet (siehe
+„Wie die Vorzeichen entstehen"), nachgeladen wird nichts.
 
 ### Wie die Akkorde entstehen
 
@@ -108,11 +116,20 @@ Kein Framework, kein Bundler, keine externen Schriften oder Bibliotheken.
   c-Moll die drei ♭ von E♭-Dur.
 - Gesetzt werden sie in der festen Reihenfolge des Zirkels: ♯ in `F C G D A E B`,
   ♭ in `B E A D G C F` – nie anders.
-- Schlüssel, Kreuze und Be im Notenbild sind **gezeichnet, nicht getippt**.
-  Die Seite lädt keine Notenschrift-Schriftart nach, und die Zeichen der
-  Systemschrift sehen auf jedem Gerät anders aus. Jedes Vorzeichen sitzt auf
-  der Linie, auf der es in echter Notation steht (F♯ auf der obersten Linie,
-  B♭ auf der Mittellinie).
+- Schlüssel, Kreuze und Be im Notenbild sind **gezeichnete Umrisse, keine
+  Schriftzeichen**. Die Seite lädt keine Notenschrift-Schriftart nach – die
+  Zeichen der Systemschrift sehen auf jedem Gerät anders aus, und ein
+  Violinschlüssel lässt sich mit gleichbleibender Strichbreite nicht
+  überzeugend zeichnen, weil er von dicken und dünnen Stellen lebt.
+- Die drei Umrisse stammen aus der freien Notenschrift-Schrift **Bravura**
+  (© Steinberg Media Technologies GmbH, SIL Open Font License 1.1); in
+  `js/main.js` liegen sie als Pfaddaten, sonst wird nichts mitgeliefert. Der
+  Lizenztext steht unter <https://openfontlicense.org>. Eingebettet ist die
+  Schrift selbst nicht.
+- Jedes Vorzeichen sitzt auf der Lage, auf der es in echter Notation steht
+  (F♯ auf der obersten Linie, B♭ auf der Mittellinie, G♭ auf der zweiten).
+  Der Umriss ist so gezeichnet, dass die *Mitte des Bauchs* auf der
+  Notenposition liegt – genau wie bei einem Notenkopf.
 
 ### Wie die Gitarrengriffe entstehen
 

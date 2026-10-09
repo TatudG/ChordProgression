@@ -221,10 +221,10 @@
     { gruppe: 'Blues', label: '12-Takt-Blues (7)',  stufen: 'I7 I7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7', info: 'mit Septakkorden' },
     { gruppe: 'Blues', label: 'Moll-Blues (8 Takte)', stufen: 'i7 i7 i7 i7 iv7 iv7 i7 V7',      info: 'kurz, mit Septen' },
     /* --- Basslinie / Slash-Akkorde --- */
-    { gruppe: 'Basslinie', label: 'Bass abwärts',  stufen: 'I I/VII vi I/V',        info: 'C – C/B – Am – C/G' },
-    { gruppe: 'Basslinie', label: 'Bass aufwärts', stufen: 'I I/3 IV I/5',          info: 'C – C/E – F – C/G' },
-    { gruppe: 'Basslinie', label: 'Bass abwärts (Moll)', stufen: 'i i/VII VI V',   info: 'Am – Am/G – F – E' },
-    { gruppe: 'Basslinie', label: 'Bass zur Tonika', stufen: 'V/7 V I/3 I',       info: 'G/B – G – C/E – C' }
+    { gruppe: 'Basslinie', label: 'Bass abwärts',  stufen: 'I I/VII vi I/V',      info: 'I – I/VII – vi – I/V' },
+    { gruppe: 'Basslinie', label: 'Bass aufwärts', stufen: 'I I/3 IV I/5',         info: 'I – I/3 – IV – I/5' },
+    { gruppe: 'Basslinie', label: 'Bass abwärts (Moll)', stufen: 'i i/VII VI V',   info: 'i – i/VII – VI – V' },
+    { gruppe: 'Basslinie', label: 'Bass zur Tonika', stufen: 'V/7 V I/3 I',        info: 'V/7 – V – I/3 – I' }
   ];
 
   /* ---------------------------------------------------------------
@@ -303,113 +303,84 @@
      2c. Dieselben Vorzeichen als Notenbild
      --------------------------------------------------------------- */
 
-  /* Schlüssel, Kreuze und Be sind gezeichnet statt getippt: die Seite lädt
-     keine Schriftart nach, und die Zeichen der Systemschrift sehen auf jedem
-     Gerät anders aus. Alle Maße sind Vielfache von S, dem Abstand zweier
-     Notenlinien – so stimmt das Bild in jeder Größe. Ausgangspunkt ist die
-     G-Linie des Violinschlüssels (zweite Linie von unten), y zeigt nach
-     unten.
+  /* Die Umrisse von Schlüssel, Kreuz und Be sind der Schrift *Bravura*
+     entnommen (© Steinberg Media Technologies GmbH, SIL Open Font License
+     1.1). Sie ist hier nicht eingebunden – eingebettet sind nur diese drei
+     Formen, damit die Seite weiterhin nichts nachlädt.
 
-     Lage eines Vorzeichens: 0 = unterste Linie, 1 = erster Zwischenraum,
+     Selbst gezeichnet hat das nicht funktioniert: ein Violinschlüssel lebt
+     vom Wechsel zwischen dicken und dünnen Stellen, und das lässt sich nicht
+     mit gleichbleibender Strichbreite zeichnen. Es muss eine gefüllte
+     Umrissform sein.
+
+     Die Zahlen sind Schrift-Einheiten (1000 je Geviert, 250 je
+     Notenlinienabstand) mit nach unten gedrehter y-Achse. Beim Zeichnen wird
+     nur mit 1/250 skaliert. */
+  var BILD_JE_ABSTAND = 250;
+  var BILD_SCHLUESSEL = 'M361 -262C364 -243 364 -244 346 -238C258 -208 201 -129 201 -44C201 46 248 110 316 133C324 136 336 139 343 139C351 139 355 134 355 128C355 121 347 118 340 115C298 97 268 54 268 8C268 -49 307 -92 368 -109C384 -113 386 -112 388 -101L438 197C440 208 439 208 424 211C408 214 388 216 368 216C193 216 80 119 80 -20C80 -79 90 -158 173 -252C233 -319 279 -356 326 -394C336 -402 338 -401 340 -390ZM470 -943C503 -943 530 -916 530 -861C530 -750 435 -660 356 -591C349 -585 345 -586 343 -599C339 -625 337 -659 337 -691C337 -847 409 -943 470 -943ZM430 -103C428 -115 429 -118 441 -117C522 -110 589 -42 589 46C589 109 551 160 495 188C483 194 481 194 479 182ZM376 -415C374 -427 376 -428 382 -434C490 -535 572 -662 572 -815C572 -902 548 -988 507 -1048C492 -1070 466 -1098 455 -1098C441 -1098 410 -1072 390 -1050C316 -968 292 -843 292 -739C292 -681 299 -616 306 -575C308 -563 309 -561 297 -551C153 -432 0 -289 0 -87C0 87 119 252 364 252C387 252 413 250 433 246C444 244 446 243 448 255C460 322 475 409 475 456C475 604 375 622 316 622C262 622 236 606 236 593C236 586 245 583 268 576C299 567 335 540 335 482C335 427 300 380 239 380C172 380 132 433 132 495C132 560 171 658 322 658C389 658 519 628 519 458C519 401 501 306 490 244C488 232 489 233 503 227C604 187 671 102 671 -11C671 -139 577 -252 430 -252C404 -252 404 -252 401 -270Z';
+  var BILD_FLACH = 'M47 81C47 81 44 21 44 -19C44 -35 45 -47 46 -51C53 -71 93 -100 116 -100C145 -100 157 -67 157 -42C157 12 111 66 68 93C64 95 61 96 58 96C49 96 47 86 47 81ZM12 170C15 174 18 175 21 175C24 175 27 173 27 173C57 156 81 129 106 112C195 50 226 -11 226 -57C226 -114 182 -150 136 -153C119 -153 95 -145 81 -136C75 -131 64 -122 59 -122C57 -122 56 -122 54 -123C47 -126 43 -133 43 -140C44 -162 50 -402 50 -422C50 -433 41 -439 31 -439C17 -439 1 -429 0 -411C0 -411 4 160 12 170Z';
+  var BILD_KREUZ = 'M168 45C162 65 115 85 92 85C86 85 81 83 80 80C78 76 77 54 77 30C77 -1 78 -36 80 -44C82 -61 128 -82 153 -82C160 -82 166 -80 168 -76C170 -71 172 -46 172 -19C172 8 170 36 168 45ZM237 -118C244 -121 249 -129 249 -135V-206C249 -211 246 -214 242 -214C240 -214 239 -214 237 -213C237 -213 217 -205 212 -204C205 -204 198 -209 198 -217V-339C198 -345 192 -350 184 -350C174 -350 168 -345 168 -339V-209C167 -199 164 -186 155 -180C143 -173 109 -159 92 -155C83 -155 80 -167 80 -175V-295C80 -301 73 -306 66 -306C56 -306 50 -301 50 -295V-160C50 -146 44 -136 38 -133C32 -130 12 -122 12 -122C5 -120 0 -112 0 -106V-35C0 -29 3 -26 8 -26C12 -26 31 -35 34 -37C35 -37 36 -38 37 -38C44 -38 50 -28 50 -20V79C50 90 45 99 39 102C33 104 12 113 12 113C5 115 0 123 0 129V200C0 206 3 209 8 209C9 209 11 208 12 208C12 208 26 202 35 199C36 198 37 198 38 198C45 198 50 209 50 214V337C50 343 56 348 63 348C73 348 80 343 80 337V198C80 185 85 178 90 176L151 151C152 151 154 150 155 150C163 150 168 162 168 168V293C168 299 174 304 181 304C192 304 198 299 198 293V151C198 143 202 131 209 128C216 125 237 117 237 117C244 114 249 106 249 100V29C249 24 246 21 242 21C240 21 239 21 237 22L211 32C205 32 198 26 198 14V-79C198 -86 203 -105 211 -108Z';
+
+  /* Maße der Umrisse in Notenlinienabständen, aus der Schrift ausgelesen:
+     „oben" ragt über den Ursprung hinaus, „unten" darunter. Beim Schlüssel
+     ist der Ursprung die unterste Notenlinie, bei den Vorzeichen die
+     Notenposition. */
+  var BILD_MASS = {
+    schluessel: { breite: 2.684, oben: -4.392, unten: 2.632 },
+    flach: { breite: 0.904, oben: -1.756, unten: 0.700 },
+    kreuz: { breite: 0.996, oben: -1.400, unten: 1.392 }
+  };
+
+  /* Lage eines Vorzeichens: 0 = unterste Linie, 1 = erster Zwischenraum,
      2 = zweite Linie und so weiter. Die Reihenfolge ist die des
      Quintenzirkels, die Lagen sind die des Violinschlüssels – F♯ sitzt auf
-     der obersten Linie, B♭ auf der Mittellinie. */
+     der obersten Linie, B♭ auf der Mittellinie.
+
+     Bei den ♭ sind die Lagen von jeher so verteilt, dass alle im System
+     bleiben: B♭ auf der Mittellinie, E♭ im vierten Zwischenraum, A♭ im
+     zweiten, D♭ auf der vierten Linie, G♭ auf der zweiten – und C♭ im dritten
+     Zwischenraum, F♭ im ersten, statt unter dem System zu landen. */
   var LAGE_KREUZ = [8, 5, 9, 6, 3, 7, 4];
-  var LAGE_FLACH = [4, 7, 3, 6, 1, 5, 8];
+  var LAGE_FLACH = [4, 7, 3, 6, 2, 5, 1];
 
-  /* Violinschlüssel: ein kräftiger Stiel mit Fuß und eine feinere Schleife,
-     die oben umklappt und unten die G-Linie umschließt. */
-  function schluesselZeichnung(x0, yG, S) {
-    function X(u) { return (x0 + u * S).toFixed(1); }
-    function Y(v) { return (yG + v * S).toFixed(1); }
-    var gruppe = svgElement('g', {
-      fill: 'none', stroke: 'currentColor', 'stroke-linecap': 'round'
-    });
-
-    gruppe.appendChild(svgElement('path', {
-      d: 'M ' + X(0) + ' ' + Y(-2.6) +
-         ' C ' + X(-0.08) + ' ' + Y(-1.2) + ' ' + X(-0.08) + ' ' + Y(0.6) +
-         ' ' + X(-0.08) + ' ' + Y(1.75) +
-         ' C ' + X(-0.08) + ' ' + Y(2.2) + ' ' + X(-0.45) + ' ' + Y(2.45) +
-         ' ' + X(-0.75) + ' ' + Y(2.3),
-      'stroke-width': 0.46 * S
-    }));
-
-    gruppe.appendChild(svgElement('path', {
-      d: 'M ' + X(0) + ' ' + Y(-2.6) +
-         ' C ' + X(-0.6) + ' ' + Y(-2.85) + ' ' + X(-0.95) + ' ' + Y(-3.25) +
-         ' ' + X(-0.7) + ' ' + Y(-3.6) +
-         ' C ' + X(-0.45) + ' ' + Y(-3.95) + ' ' + X(0.2) + ' ' + Y(-4.0) +
-         ' ' + X(0.65) + ' ' + Y(-3.55) +
-         ' C ' + X(1.05) + ' ' + Y(-3.1) + ' ' + X(1.0) + ' ' + Y(-2.35) +
-         ' ' + X(0.6) + ' ' + Y(-1.7) +
-         ' C ' + X(0.2) + ' ' + Y(-1.05) + ' ' + X(-0.35) + ' ' + Y(-0.75) +
-         ' ' + X(-0.55) + ' ' + Y(0.0) +
-         ' C ' + X(-0.7) + ' ' + Y(0.42) + ' ' + X(-0.3) + ' ' + Y(0.85) +
-         ' ' + X(0.2) + ' ' + Y(0.72) +
-         ' C ' + X(0.76) + ' ' + Y(0.58) + ' ' + X(0.95) + ' ' + Y(-0.05) +
-         ' ' + X(0.55) + ' ' + Y(-0.55) +
-         ' C ' + X(0.25) + ' ' + Y(-0.92) + ' ' + X(-0.25) + ' ' + Y(-0.88) +
-         ' ' + X(-0.4) + ' ' + Y(-0.5),
-      'stroke-width': 0.3 * S
-    }));
-
-    return gruppe;
-  }
-
-  /* Kreuz: zwei parallele Senkrechte, zwei Querbalken, die nach rechts oben
-     laufen. */
-  function kreuzZeichnung(x, y, S) {
-    var h = 1.12 * S, b = 0.42 * S;
-    var gruppe = svgElement('g', {
-      fill: 'none', stroke: 'currentColor', 'stroke-linecap': 'round',
-      'stroke-width': 0.15 * S
-    });
-    [[-0.15, -0.2], [0.19, 0.14]].forEach(function (paar) {
-      gruppe.appendChild(svgElement('line', {
-        x1: x + paar[0] * S, y1: y - h, x2: x + paar[1] * S, y2: y + h
-      }));
-    });
-    [[0.28, -0.04], [0.68, 0.36]].forEach(function (balken) {
-      gruppe.appendChild(svgElement('line', {
-        x1: x - b, y1: y + balken[0] * S, x2: x + b, y2: y + balken[1] * S
-      }));
-    });
-    return gruppe;
-  }
-
-  /* Be: ein Stiel, an dem unten ein gefüllter Bauch hängt. */
-  function beZeichnung(x, y, S) {
-    var gruppe = svgElement('g', { stroke: 'currentColor', 'stroke-linecap': 'round' });
-    var stiel = x - 0.3 * S, unten = y + 0.78 * S;
-    gruppe.appendChild(svgElement('line', {
-      x1: stiel, y1: y - 1.32 * S, x2: stiel, y2: unten, 'stroke-width': 0.15 * S
-    }));
-    gruppe.appendChild(svgElement('path', {
-      d: 'M ' + stiel + ' ' + unten +
-         ' C ' + (x + 0.42 * S) + ' ' + (y + 0.86 * S) + ' ' + (x + 0.78 * S) + ' ' + (y + 0.28 * S) +
-         ' ' + (x + 0.66 * S) + ' ' + (y - 0.18 * S) +
-         ' C ' + (x + 0.56 * S) + ' ' + (y - 0.52 * S) + ' ' + (x + 0.1 * S) + ' ' + (y - 0.42 * S) +
-         ' ' + (x - 0.08 * S) + ' ' + (y - 0.05 * S) + ' Z',
-      fill: 'currentColor'
-    }));
-    return gruppe;
-  }
+  /* Aufbau des Bildes, alles in Notenlinienabständen. */
+  var BILD_RAND = 0.35;             /* Luft um das Bild */
+  var BILD_LINKS = 0.2;             /* Einzug des Schlüssels */
+  var BILD_ABSTAND = 0.62;          /* Luft zwischen Schlüssel und Vorzeichen */
+  var BILD_SCHRITT = 1.1;           /* Abstand von Vorzeichen zu Vorzeichen */
+  var BILD_STRICH = 0.085;          /* Dicke der Notenlinien */
+  var BILD_PX = 10;                 /* Pixel je Notenlinienabstand */
 
   function vorzeichenBild(ta) {
     var vorzeichen = vorzeichenVon(ta);
     var anzahl = Math.abs(vorzeichen.anzahl);
-    var S = 10;                       /* Abstand der Notenlinien im Bild */
-    var links = 2.2 * S;              /* Platz für den Schlüssel davor */
-    var erste = links + 1.75 * S;     /* erstes Vorzeichen hinter dem Schlüssel */
-    var schritt = 1.2 * S;
-    var oben = 4.6 * S;               /* Rand über der obersten Linie */
-    var boden = oben + 4 * S;         /* unterste Linie */
-    var breite = erste + anzahl * schritt + 1.1 * S;
-    var hoehe = oben + 4 * S + 1.8 * S;
+    var istKreuz = vorzeichen.anzahl > 0;
+    var lagen = istKreuz ? LAGE_KREUZ : LAGE_FLACH;
+    var mass = istKreuz ? BILD_MASS.kreuz : BILD_MASS.flach;
+    var form = istKreuz ? BILD_KREUZ : BILD_FLACH;
+
+    /* Die fünf Notenlinien liegen zwischen y = 0 und y = 4; die unterste
+       Linie ist der Ursprung des Schlüssels. */
+    var oben = 4 + BILD_MASS.schluessel.oben;
+    var unten = 4 + BILD_MASS.schluessel.unten;
+    var y, i;
+
+    for (i = 0; i < anzahl; i++) {
+      y = 4 - lagen[i] / 2;
+      oben = Math.min(oben, y + mass.oben);
+      unten = Math.max(unten, y + mass.unten);
+    }
+
+    var versatz = BILD_RAND - oben;          /* alles in den sichtbaren Bereich */
+    var hoehe = (unten - oben) + 2 * BILD_RAND;
+    var ersteMitte = BILD_LINKS + BILD_MASS.schluessel.breite + BILD_ABSTAND + mass.breite / 2;
+    var breite = ersteMitte + (anzahl > 0 ? (anzahl - 1) * BILD_SCHRITT : 0) +
+                 mass.breite / 2 + BILD_RAND;
 
     var svg = svgElement('svg', {
-      viewBox: '0 0 ' + breite.toFixed(1) + ' ' + hoehe.toFixed(1),
+      viewBox: '0 0 ' + breite.toFixed(2) + ' ' + hoehe.toFixed(2),
+      width: Math.round(breite * BILD_PX),
+      height: Math.round(hoehe * BILD_PX),
       'class': 'notenbild',
       role: 'img',
       'aria-label': 'Notenbild: Violinschlüssel ' + (anzahl === 0
@@ -417,23 +388,30 @@
         : 'mit ' + anzahl + ' Vorzeichen (' + vorzeichen.namen.join(' ') + ')')
     });
 
-    for (var i = 0; i < 5; i++) {
-      svg.appendChild(svgElement('line', {
-        x1: 0, y1: oben + i * S, x2: breite.toFixed(1), y2: oben + i * S,
-        stroke: 'currentColor', 'stroke-width': 0.12 * S
+    /* Ein Zeichen an die Stelle (x, y) setzen – y ist die Notenposition,
+       der Umriss wird auf Notenlinienabstände heruntergerechnet. */
+    function setze(form, x, y) {
+      svg.appendChild(svgElement('path', {
+        d: form,
+        fill: 'currentColor',
+        transform: 'translate(' + x.toFixed(3) + ',' + (y + versatz).toFixed(3) +
+                   ') scale(' + (1 / BILD_JE_ABSTAND).toFixed(6) + ')'
       }));
     }
 
-    svg.appendChild(schluesselZeichnung(links, oben + 2 * S, S));
+    for (i = 0; i < 5; i++) {
+      svg.appendChild(svgElement('line', {
+        x1: 0, y1: (i + versatz).toFixed(3), x2: breite.toFixed(2), y2: (i + versatz).toFixed(3),
+        'class': 'notenbild__linie', 'stroke-width': BILD_STRICH
+      }));
+    }
 
-    var lagen = vorzeichen.anzahl > 0 ? LAGE_KREUZ : LAGE_FLACH;
-    var zeichne = vorzeichen.anzahl > 0 ? kreuzZeichnung : beZeichnung;
+    /* Der Schlüssel steht auf der untersten Linie (y = 4), nicht auf einer
+       Notenposition – seine Spirale umschließt dadurch die G-Linie. */
+    setze(BILD_SCHLUESSEL, BILD_LINKS, 4);
+
     for (i = 0; i < anzahl; i++) {
-      svg.appendChild(zeichne(
-        erste + i * schritt,
-        boden - lagen[i] * S / 2,
-        S
-      ));
+      setze(form, ersteMitte + i * BILD_SCHRITT - mass.breite / 2, 4 - lagen[i] / 2);
     }
 
     return svg;
@@ -1159,6 +1137,16 @@
     return eingabe.replace(/[–—|,]/g, ' ').split(/\s+/).filter(function (t) { return t.length > 0; });
   }
 
+  /* Eine Stufenfolge in die Akkordnamen der Tonart übersetzen: aus
+     "I V vi IV" wird in G♭-Dur "G♭ D♭ E♭m C♭". Das Eingabefeld zeigt so
+     immer, was tatsächlich gespielt wird. Etwas Unerkanntes bleibt stehen. */
+  function akkordnamen(text, ta) {
+    return tokenisieren(text).map(function (token) {
+      var rohdaten = parseToken(token, ta);
+      return rohdaten ? baueAkkord(rohdaten).symbol : token;
+    }).join(' ');
+  }
+
   function karte(token, ta) {
     var box = document.createElement('article');
     var rohdaten = parseToken(token, ta);
@@ -1212,9 +1200,16 @@
     return box;
   }
 
+  /* Die Vorlage ist die Stufenfolge, nicht der Text im Feld: steht im Feld
+     "G♭ D♭ E♭m C♭", wird trotzdem "I V vi IV" gelesen. Nur so ändern der
+     Tonart- und der Sept-Umschalter weiterhin alle Karten. */
+  function quelleDerProgression() {
+    return elVorlage.value || elProgression.value;
+  }
+
   function zeichne() {
     var ta = holeTonart(elTonart.value);
-    var tokens = tokenisieren(elProgression.value);
+    var tokens = tokenisieren(quelleDerProgression());
 
     elErgebnis.textContent = '';
 
@@ -1233,8 +1228,7 @@
     stark.textContent = tonartLabel(ta);
     kopf.appendChild(stark);
     kopf.appendChild(document.createTextNode(
-      ' · ' + tokens.length + (tokens.length === 1 ? ' Akkord' : ' Akkorde') +
-      ' · ' + elProgression.value.trim()
+      ' · ' + tokens.length + (tokens.length === 1 ? ' Akkord' : ' Akkorde')
     ));
     elErgebnis.appendChild(kopf);
 
@@ -1252,7 +1246,9 @@
       elErgebnis.appendChild(karte(token, ta));
     });
 
-    merke(ta, elProgression.value);
+    /* Gemerkt und in die Adresse kommt die Stufenfolge, nicht der Feldtext:
+       eine Vorlage lässt sich so in jeder Tonart wieder herstellen. */
+    merke(ta, quelleDerProgression().trim());
   }
 
   /* ---------------------------------------------------------------
@@ -1343,6 +1339,15 @@
     if (elVorlage.selectedIndex === -1) { elVorlage.value = ''; }
   }
 
+  /* Im Feld stehen die Akkorde der Tonart, nicht die Stufen – "I V vi IV"
+     wird in G♭-Dur zu "G♭ D♭ E♭m C♭". Die Vorlage im Auswahlfeld bleibt
+     dabei die Stufenfolge (siehe quelleDerProgression). */
+  function schreibeFeld() {
+    if (elVorlage.value) {
+      elProgression.value = akkordnamen(elVorlage.value, holeTonart(elTonart.value));
+    }
+  }
+
   function beschrifteTonartenNeu() {
     Array.prototype.forEach.call(elTonart.options, function (opt) {
       opt.textContent = tonartLabel(holeTonart(opt.value));
@@ -1381,33 +1386,38 @@
   elTonart.value = holeTonart(startTonart).id;
   elProgression.value = startProgression;
   setzeVorlage(startProgression);
+  schreibeFeld();
   zeigeLegende();
 
+  /* Eine andere Tonart transponiert die Vorlage mit, statt die alten
+     Akkorde stehen zu lassen. */
   elTonart.addEventListener('change', function () {
-    setzeVorlage(elProgression.value);
+    schreibeFeld();
     zeichne();
   });
 
+  /* Tippen im Feld ist eine eigene Eingabe – die Vorlagenauswahl springt
+     dann auf "eigene Eingabe", das Feld bleibt genau so, wie getippt. */
   elProgression.addEventListener('input', function () {
     setzeVorlage(elProgression.value);
     zeichne();
   });
 
   elVorlage.addEventListener('change', function () {
-    if (elVorlage.value) {
-      elProgression.value = elVorlage.value;
-      zeichne();
-    }
+    schreibeFeld();
+    zeichne();
   });
 
   elNotennamen.addEventListener('change', function () {
     notenStil = elNotennamen.checked ? 'deutsch' : 'international';
     beschrifteTonartenNeu();
+    schreibeFeld();          /* B♭ heißt dann B */
     zeichne();
   });
 
   elSept.addEventListener('change', function () {
     septAkkorde = elSept.checked;
+    schreibeFeld();          /* aus G wird Gmaj7 */
     zeichne();
   });
 
