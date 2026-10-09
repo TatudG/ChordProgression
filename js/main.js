@@ -18,6 +18,10 @@
   var STUFEN_QUALITAET_DUR  = ['maj', 'min', 'min', 'maj', 'maj', 'min', 'dim'];
   var STUFEN_QUALITAET_MOLL = ['min', 'dim', 'maj', 'min', 'maj', 'maj', 'maj'];
 
+  /* Leitereigene Septakkorde – für den Umschalter „Septakkorde ergänzen“ */
+  var STUFEN_SEPT_DUR  = ['maj7', 'm7', 'm7', 'maj7', '7', 'm7', 'm7b5'];
+  var STUFEN_SEPT_MOLL = ['m7', 'm7b5', 'maj7', 'm7', '7', 'maj7', '7'];
+
   var ROEMISCH = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 
   /* Tonbuchstaben in Terzenschichtung: C D E F G A B */
@@ -54,14 +58,27 @@
     '11':  { intervalle: [0, 4, 7, 10, 14, 17],        suffix: '11',     stufeSuffix: '11',    klein: false },
     m11:   { intervalle: [0, 3, 7, 10, 14, 17],        suffix: 'm11',    stufeSuffix: '11',    klein: true  },
     '13':  { intervalle: [0, 4, 7, 10, 14, 17, 21],    suffix: '13',     stufeSuffix: '13',    klein: false },
-    m13:   { intervalle: [0, 3, 7, 10, 14, 17, 21],    suffix: 'm13',    stufeSuffix: '13',    klein: true  }
+    m13:   { intervalle: [0, 3, 7, 10, 14, 17, 21],    suffix: 'm13',    stufeSuffix: '13',    klein: true  },
+
+    /* Quartvorhalte und alterierte Dominanten */
+    '7sus4': { intervalle: [0, 5, 7, 10],              suffix: '7sus4',  stufeSuffix: '7sus4', klein: false },
+    '7b5':   { intervalle: [0, 4, 6, 10],              suffix: '7♭5',    stufeSuffix: '7♭5',   klein: false },
+    '7#5':   { intervalle: [0, 4, 8, 10],              suffix: '7♯5',    stufeSuffix: '7♯5',   klein: false },
+    '7b9':   { intervalle: [0, 4, 7, 10, 13],          suffix: '7♭9',    stufeSuffix: '7♭9',   klein: false },
+    '7#9':   { intervalle: [0, 4, 7, 10, 15],          suffix: '7♯9',    stufeSuffix: '7♯9',   klein: false },
+    '69':    { intervalle: [0, 4, 7, 9, 14],           suffix: '6/9',    stufeSuffix: '6/9',   klein: false },
+    m69:     { intervalle: [0, 3, 7, 9, 14],           suffix: 'm6/9',   stufeSuffix: '6/9',   klein: true  },
+    m7b9:    { intervalle: [0, 3, 7, 10, 13],          suffix: 'm7♭9',   stufeSuffix: '7♭9',   klein: true  },
+    'm7#5':  { intervalle: [0, 3, 8, 10],              suffix: 'm7♯5',   stufeSuffix: '7♯5',   klein: true  },
+    /* Moll-Dur-Sept: kleines Dreieck über dem Mollakkord */
+    mMaj7:   { intervalle: [0, 3, 7, 11],              suffix: 'm(maj7)', stufeSuffix: 'maj7',  klein: true  }
   };
 
   /* Zu jedem Halbtonintervall gehört ein Buchstabenschritt ab dem Grundton.
      Nur so entstehen korrekte Namen wie B–D–F♯ statt B–D–G♭. */
   var INTERVALL_SCHRITT = {
     0: 0, 2: 1, 3: 2, 4: 2, 5: 3, 6: 4, 7: 4, 8: 4,
-    9: 5, 10: 6, 11: 6, 14: 1, 17: 3, 21: 5
+    9: 5, 10: 6, 11: 6, 13: 1, 14: 1, 15: 1, 17: 3, 21: 5
   };
 
   /* Verschiedene Schreibweisen, die auf einen Akkordtyp zeigen.
@@ -83,17 +100,37 @@
     'madd9': 'madd9', 'm(add9)': 'madd9', 'minadd9': 'madd9',
     '9': '9', 'maj9': 'maj9', 'M9': 'maj9', 'm9': 'm9', 'min9': 'm9',
     '11': '11', 'maj11': '11', 'm11': 'm11', 'min11': 'm11',
-    '13': '13', 'maj13': '13', 'm13': 'm13', 'min13': 'm13'
+    '13': '13', 'maj13': '13', 'm13': 'm13', 'min13': 'm13',
+    '7sus4': '7sus4', '7sus': '7sus4',
+    '7b5': '7b5', '7♭5': '7b5',
+    '7#5': '7#5', '7♯5': '7#5', 'aug7': '7#5',
+    '7b9': '7b9', '7♭9': '7b9',
+    '7#9': '7#9', '7♯9': '7#9',
+    'm7b9': 'm7b9', 'm7♭9': 'm7b9',
+    'm7#5': 'm7#5', 'm7♯5': 'm7#5',
+    '6/9': '69', '69': '69', 'm6/9': 'm69', 'm69': 'm69',
+    'mmaj7': 'mMaj7', 'm(maj7)': 'mMaj7', 'minmaj7': 'mMaj7', 'mM7': 'mMaj7',
+    'mΔ7': 'mMaj7', 'mΔ': 'mMaj7', '-Δ7': 'mMaj7',
+    '-6': 'm6', '-7': 'm7', '-9': 'm9', '-11': 'm11', '-13': 'm13'
   };
 
   /* Wird eine römische Ziffer klein geschrieben, ist der Akkord moll,
      groß geschrieben Dur. Diese Tabellen rechnen um. */
-  var GROSS_ZU_KLEIN = { maj: 'min', '6': 'm6', '7': 'm7', maj7: 'm7', add9: 'madd9', '9': 'm9', maj9: 'm9', '11': 'm11', '13': 'm13' };
-  var KLEIN_ZU_GROSS = { min: 'maj', m6: '6', m7: '7', m7b5: '7', madd9: 'add9', m9: '9', m11: '11', m13: '13' };
+  var GROSS_ZU_KLEIN = {
+    maj: 'min', '6': 'm6', '7': 'm7', maj7: 'm7', add9: 'madd9',
+    '9': 'm9', maj9: 'm9', '11': 'm11', '13': 'm13',
+    '69': 'm69', '7b5': 'm7b5', '7b9': 'm7b9'
+  };
+  var KLEIN_ZU_GROSS = {
+    min: 'maj', m6: '6', m7: '7', m7b5: '7', madd9: 'add9',
+    m9: '9', m11: '11', m13: '13',
+    m69: '69', m7b9: '7b9'
+  };
 
   /* Notennamen in zwei Schreibweisen. Im Deutschen ist "B" der Ton, den
      andere Sprachen B♭ nennen; das englische B heißt dort "H". */
   var notenStil = 'international';
+  var septAkkorde = false;
 
   function notenName(buchstabe, vorzeichen) {
     if (notenStil === 'deutsch' && buchstabe === 'B') {
@@ -144,6 +181,7 @@
   /* Vorlagen. Die Stufen stehen in der Schreibweise, die auch die
      Groß-/Kleinschreibung auswertet. */
   var VORLAGEN = [
+    /* --- Dur, Dreiklänge --- */
     { gruppe: 'Dur',   label: 'I–V–vi–IV',    stufen: 'I V vi IV',              info: 'Pop-Klassiker' },
     { gruppe: 'Dur',   label: 'vi–IV–I–V',    stufen: 'vi IV I V',              info: 'Pop, beginnt auf der 6. Stufe' },
     { gruppe: 'Dur',   label: 'I–vi–IV–V',    stufen: 'I vi IV V',              info: '50er-Jahre / Doo-Wop' },
@@ -151,15 +189,41 @@
     { gruppe: 'Dur',   label: 'I–V–IV–I',     stufen: 'I V IV I',               info: 'Rock' },
     { gruppe: 'Dur',   label: 'I–iii–IV–V',   stufen: 'I iii IV V',             info: 'aufsteigend' },
     { gruppe: 'Dur',   label: 'I–IV–vi–V',    stufen: 'I IV vi V',              info: 'Pop-Ballade' },
-    { gruppe: 'Dur',   label: 'ii–V–I',       stufen: 'ii V I',                 info: 'Jazz-Kadenz' },
-    { gruppe: 'Dur',   label: 'I–vi–ii–V',    stufen: 'I vi ii V',              info: 'Jazz-Turnaround' },
+    { gruppe: 'Dur',   label: 'I–iii–vi–IV',  stufen: 'I iii vi IV',            info: 'Pop-Ballade, 3. statt 5. Stufe' },
     { gruppe: 'Dur',   label: 'Kanon',        stufen: 'I V vi iii IV I IV V',   info: 'Pachelbel' },
+    /* --- Moll, Dreiklänge --- */
     { gruppe: 'Moll',  label: 'i–VI–III–VII', stufen: 'i VI III VII',           info: 'Moll-Pop' },
     { gruppe: 'Moll',  label: 'i–iv–VII–III', stufen: 'i iv VII III',           info: 'Moll' },
     { gruppe: 'Moll',  label: 'i–VI–iv–V',    stufen: 'i VI iv V',              info: 'Moll-Ballade' },
     { gruppe: 'Moll',  label: 'i–VII–VI–V',   stufen: 'i VII VI V',             info: 'Andalusische Kadenz' },
     { gruppe: 'Moll',  label: 'i–iv–v–i',     stufen: 'i iv v i',               info: 'Moll-Kadenz (natürlich)' },
-    { gruppe: 'Blues', label: '12-Takt-Blues', stufen: 'I I I I IV IV I I V IV I V', info: 'Dur-Blues' }
+    { gruppe: 'Moll',  label: 'i–III–VII–VI', stufen: 'i III VII VI',           info: 'absteigend' },
+    { gruppe: 'Moll',  label: 'i–v–VI–IV',    stufen: 'i v VI IV',              info: 'Moll-Pop, ohne Leitton' },
+    /* --- Septakkorde --- */
+    { gruppe: 'Septakkorde', label: 'ii7–V7–Imaj7',   stufen: 'ii7 V7 Imaj7',        info: 'Jazz-Kadenz' },
+    { gruppe: 'Septakkorde', label: 'Imaj7–vi7–ii7–V7', stufen: 'Imaj7 vi7 ii7 V7',  info: 'Turnaround' },
+    { gruppe: 'Septakkorde', label: 'Imaj7–IVmaj7–iii7–vi7', stufen: 'Imaj7 IVmaj7 iii7 vi7', info: 'Pop mit Septen' },
+    { gruppe: 'Septakkorde', label: 'Imaj7–ii7–V7–I6', stufen: 'Imaj7 ii7 V7 I6',   info: 'mit Sextschluss' },
+    { gruppe: 'Septakkorde', label: 'iii7–vi7–ii7–V7', stufen: 'iii7 vi7 ii7 V7',  info: 'Kette über die 3. Stufe' },
+    { gruppe: 'Septakkorde', label: 'i7–iv7–VII7–III7', stufen: 'i7 iv7 VII7 III7', info: 'Moll mit Septen' },
+    { gruppe: 'Septakkorde', label: 'Imaj7–I7',       stufen: 'Imaj7 I7',            info: 'Dur-Sept zur Dominantsept' },
+    { gruppe: 'Septakkorde', label: 'V7sus4–V7–I',    stufen: 'V7sus4 V7 I',         info: 'Vorhalt löst sich auf' },
+    /* --- Jazz --- */
+    { gruppe: 'Jazz',  label: 'Imaj7–VI7–ii7–V7',  stufen: 'Imaj7 VI7 ii7 V7',      info: 'Rhythm Changes, A-Teil' },
+    { gruppe: 'Jazz',  label: 'iii7–VI7–ii7–V7',   stufen: 'iii7 VI7 ii7 V7',       info: 'Kette abwärts' },
+    { gruppe: 'Jazz',  label: 'ii7–V7–I6/9',       stufen: 'ii7 V7 I6/9',           info: 'Schluss mit Sext-Non-Akkord' },
+    { gruppe: 'Jazz',  label: 'iiø7–V7–i7',        stufen: 'iiø7 V7 i7',            info: 'Moll-Kadenz' },
+    { gruppe: 'Jazz',  label: 'Imaj7–VI7–II7–V7',  stufen: 'Imaj7 VI7 II7 V7',      info: 'Dominantkette über den Quintfall' },
+    { gruppe: 'Jazz',  label: 'V7♭9 – Imaj7',      stufen: 'V7♭9 Imaj7',            info: 'alterierte Dominante' },
+    /* --- Blues --- */
+    { gruppe: 'Blues', label: '12-Takt-Blues',      stufen: 'I I I I IV IV I I V IV I V',       info: 'Dreiklänge' },
+    { gruppe: 'Blues', label: '12-Takt-Blues (7)',  stufen: 'I7 I7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7', info: 'mit Septakkorden' },
+    { gruppe: 'Blues', label: 'Moll-Blues (8 Takte)', stufen: 'i7 i7 i7 i7 iv7 iv7 i7 V7',      info: 'kurz, mit Septen' },
+    /* --- Basslinie / Slash-Akkorde --- */
+    { gruppe: 'Basslinie', label: 'Bass abwärts',  stufen: 'I I/VII vi I/V',        info: 'C – C/B – Am – C/G' },
+    { gruppe: 'Basslinie', label: 'Bass aufwärts', stufen: 'I I/3 IV I/5',          info: 'C – C/E – F – C/G' },
+    { gruppe: 'Basslinie', label: 'Bass abwärts (Moll)', stufen: 'i i/VII VI V',   info: 'Am – Am/G – F – E' },
+    { gruppe: 'Basslinie', label: 'Bass zur Tonika', stufen: 'V/7 V I/3 I',       info: 'G/B – G – C/E – C' }
   ];
 
   /* ---------------------------------------------------------------
@@ -185,6 +249,18 @@
     return (ta.moll ? STUFEN_QUALITAET_MOLL : STUFEN_QUALITAET_DUR)[index];
   }
 
+  /* Leitereigene Septime zu einer Stufe. Schreibt die Stufe Dur, wo die
+     Tonart Moll hätte (etwa "VI" in C-Dur), wird die Dominantseptime
+     gesetzt – das ergibt den üblichen Zwischendominant. */
+  function septVon(index, ta, gross) {
+    var leiter = (ta.moll ? STUFEN_SEPT_MOLL : STUFEN_SEPT_DUR)[index];
+    var dreiklang = leitereigenerTyp(index, ta);
+
+    if (gross === null) { return leiter; }          /* Ziffer: ganz leitereigen */
+    if (gross) { return dreiklang === 'maj' ? leiter : '7'; }
+    return dreiklang === 'min' ? leiter : (dreiklang === 'dim' ? 'm7b5' : 'm7');
+  }
+
   function findeAkkordtyp(rest) {
     if (Object.prototype.hasOwnProperty.call(SUFFIX_ZUORDNUNG, rest)) {
       return SUFFIX_ZUORDNUNG[rest];
@@ -204,9 +280,10 @@
      3. Progression lesen
      --------------------------------------------------------------- */
 
-  /* Akkordsymbol wie "Am7", "Cmaj7", "F♯dim" in Grundton + Typ zerlegen */
-  function parseAkkordsymbol(text) {
-    var treffer = /^([A-Ga-gHh])([#♯b♭]?)(.*)$/.exec(text);
+  /* Ein einzelner Tonname: "C", "F♯", "B♭", im Deutschen auch "H".
+     Ergibt Tonbuchstabe, Vorzeichen und Halbtonklasse. */
+  function parseTonbuchstabe(text) {
+    var treffer = /^([A-Ga-gHh])([#♯b♭]?)$/.exec(text);
     if (!treffer) { return null; }
 
     var geschrieben = treffer[1].toUpperCase();
@@ -220,16 +297,37 @@
        das gilt nur für "B", nicht für das zu "B" gewordene "H". */
     if (notenStil === 'deutsch' && geschrieben === 'B' && zeichen === '') { vorzeichen = -1; }
 
-    var rest = treffer[3].replace(/[\s()]/g, '');
-    var typ = findeAkkordtyp(rest);
-    if (!typ) { return null; }
-
     return {
       buchstabe: buchstabe,
       vorzeichen: vorzeichen,
-      grundton: ((BUCHSTABE_PC[buchstabe] + vorzeichen) % 12 + 12) % 12,
-      typ: typ
+      grundton: ((BUCHSTABE_PC[buchstabe] + vorzeichen) % 12 + 12) % 12
     };
+  }
+
+  /* Grundton einer Stufe: Buchstabe einen Schritt weiter in der Tonleiter,
+     Halbtonklasse aus der Skala der Tonart. */
+  function stufenGrundton(index, vorzeichen, ta) {
+    return {
+      buchstabe: BUCHSTABEN[(BUCHSTABEN.indexOf(ta.buchstabe) + index) % 7],
+      vorzeichen: vorzeichen,
+      grundton: (((ta.grundton + skalaVon(ta)[index] + vorzeichen) % 12) + 12) % 12
+    };
+  }
+
+  /* Akkordsymbol wie "Am7", "Cmaj7", "F♯dim" in Grundton + Typ zerlegen */
+  function parseAkkordsymbol(text) {
+    var treffer = /^([A-Ga-gHh][#♯b♭]?)(.*)$/.exec(text);
+    if (!treffer) { return null; }
+
+    var ton = parseTonbuchstabe(treffer[1]);
+    if (!ton) { return null; }
+
+    var rest = treffer[2].replace(/[\s()]/g, '');
+    var typ = findeAkkordtyp(rest);
+    if (!typ) { return null; }
+
+    ton.typ = typ;
+    return ton;
   }
 
   /* Stufenangabe wie "IV", "bVII", "vi", "2" oder "V7" zerlegen.
@@ -264,6 +362,8 @@
       if (!typ) { return null; }
       if (gross === true && KLEIN_ZU_GROSS[typ]) { typ = KLEIN_ZU_GROSS[typ]; }
       if (gross === false && GROSS_ZU_KLEIN[typ]) { typ = GROSS_ZU_KLEIN[typ]; }
+    } else if (septAkkorde) {
+      typ = septVon(index, ta, gross);
     } else if (gross === null) {
       typ = leitereigenerTyp(index, ta);
     } else {
@@ -274,20 +374,54 @@
     if (zeichen === '#' || zeichen === '♯') { vorzeichen = 1; }
     if (zeichen === 'b' || zeichen === '♭') { vorzeichen = -1; }
 
-    var grundton = ta.grundton + skalaVon(ta)[index] + vorzeichen;
+    var ton = stufenGrundton(index, vorzeichen, ta);
+    ton.typ = typ;
+    ton.stufe = index + 1;
+    return ton;
+  }
 
-    return {
-      /* Die Stufe liegt einen Buchstabenschritt über dem Grundton der Tonart,
-         deshalb ergibt sich der Tonname aus der Tonleiter selbst. */
-      buchstabe: BUCHSTABEN[(BUCHSTABEN.indexOf(ta.buchstabe) + index) % 7],
-      vorzeichen: vorzeichen,
-      grundton: (((grundton % 12) + 12) % 12),
-      typ: typ,
-      stufe: index + 1
-    };
+  /* Basston eines Slash-Akkords. Erlaubt sind Tonnamen ("C/G") und Stufen
+     ("I/VII") – die Stufe ist praktisch, weil eine Vorlage damit in jeder
+     Tonart funktioniert. */
+  function parseBass(text, ta) {
+    var ton = parseTonbuchstabe(text);
+    if (ton) { return ton; }
+
+    var treffer = /^([#♯b♭]?)(VII|VI|IV|V|III|II|I|vii|vi|iv|v|iii|ii|i|[1-7])$/.exec(text);
+    if (!treffer) { return null; }
+
+    var vorzeichen = 0;
+    if (treffer[1] === '#' || treffer[1] === '♯') { vorzeichen = 1; }
+    if (treffer[1] === 'b' || treffer[1] === '♭') { vorzeichen = -1; }
+
+    var rohstufe = treffer[2];
+    var index = /^[1-7]$/.test(rohstufe)
+      ? parseInt(rohstufe, 10) - 1
+      : ROEMISCH.indexOf(rohstufe.toUpperCase());
+    if (index === -1) { return null; }
+
+    return stufenGrundton(index, vorzeichen, ta);
+  }
+
+  /* Slash-Akkord in Akkord und Basston trennen. "C6/9" ist keiner: dort steht
+     hinter dem Schrägstrich keine Tonangabe, das bleibt ein Akkordzusatz. */
+  function zerlegeSlash(text) {
+    var stelle = text.lastIndexOf('/');
+    if (stelle <= 0 || stelle === text.length - 1) { return null; }
+    return { oben: text.slice(0, stelle), bass: text.slice(stelle + 1) };
   }
 
   function parseToken(token, ta) {
+    var teile = zerlegeSlash(token);
+    if (teile) {
+      var oben = parseStufe(teile.oben, ta) || parseAkkordsymbol(teile.oben);
+      var bass = parseBass(teile.bass, ta);
+      if (oben && bass) {
+        oben.bass = bass;
+        return oben;
+      }
+      /* Kein gültiger Basston – dann ist der Schrägstrich Teil des Namens. */
+    }
     return parseStufe(token, ta) || parseAkkordsymbol(token);
   }
 
@@ -332,13 +466,30 @@
            : rohdaten.vorzeichen > 0 ? false
            : null;
 
+    var symbol = akkordGrundtonName(rohdaten.buchstabe, rohdaten.grundton) + info.suffix;
+    var bassPc = null;
+
+    /* Basston eines Slash-Akkords: eigener Name, eigene Farbe auf der Tastatur.
+       Ist er kein Akkordton (C/B, C/D), kommt er als tiefster Ton dazu. */
+    if (rohdaten.bass) {
+      bassPc = rohdaten.bass.grundton;
+      var bassName = akkordGrundtonName(rohdaten.bass.buchstabe, bassPc);
+      symbol += '/' + bassName;
+      if (pcs.indexOf(bassPc) === -1) {
+        pcs.push(bassPc);
+        toene.unshift(bassName);
+      }
+      if (!namenNachPc[bassPc]) { namenNachPc[bassPc] = bassName; }
+    }
+
     return {
       stufe: stufe,
-      symbol: akkordGrundtonName(rohdaten.buchstabe, rohdaten.grundton) + info.suffix,
+      symbol: symbol,
       toene: toene,
       pcs: pcs,
       namenNachPc: namenNachPc,
       grundtonPc: rohdaten.grundton,
+      bassPc: bassPc,
       be: be
     };
   }
@@ -397,9 +548,15 @@
       return akkord.namenNachPc[pc] || tasteName(pc, akkord.be);
     }
 
-    /* Grundton farblich abgesetzt, Töne der zweiten Oktave schwächer */
+    /* Grundton und Basston farblich abgesetzt, zweite Oktave schwächer.
+       Der Basston hat Vorrang – außer er ist ohnehin der Grundton. */
     function klasse(pc, untereOktave) {
-      var teile = [pc === akkord.grundtonPc ? 'is-grundton' : 'is-akkordton'];
+      var teile = ['is-akkordton'];
+      if (akkord.bassPc !== null && pc === akkord.bassPc && pc !== akkord.grundtonPc) {
+        teile = ['is-bass'];
+      } else if (pc === akkord.grundtonPc) {
+        teile = ['is-grundton'];
+      }
       if (!untereOktave) { teile.push('is-obere'); }
       return teile.join(' ');
     }
@@ -464,6 +621,7 @@
   var elVorlage = document.getElementById('vorlage');
   var elErgebnis = document.getElementById('ergebnis');
   var elNotennamen = document.getElementById('notennamen');
+  var elSept = document.getElementById('septakkorde');
 
   function holeTonart(id) {
     for (var i = 0; i < TONARTEN.length; i++) {
@@ -568,15 +726,16 @@
   function merke(ta, progression) {
     try {
       window.localStorage.setItem(SPEICHER, JSON.stringify({
-        tonart: ta.id, progression: progression, noten: notenStil
+        tonart: ta.id, progression: progression, noten: notenStil, sept: septAkkorde
       }));
     } catch (e) { /* privater Modus o. Ä. – dann eben nicht */ }
 
-    /* Teilbarer Link, z. B. ?tonart=G-Dur&p=I%20V%20vi%20IV&noten=deutsch */
+    /* Teilbarer Link, z. B. ?tonart=G-Dur&p=I%20V%20vi%20IV&noten=deutsch&sept=1 */
     try {
       var neu = '?tonart=' + encodeURIComponent(ta.id) +
                 '&p=' + encodeURIComponent(progression.trim()) +
-                (notenStil === 'deutsch' ? '&noten=deutsch' : '');
+                (notenStil === 'deutsch' ? '&noten=deutsch' : '') +
+                (septAkkorde ? '&sept=1' : '');
       window.history.replaceState(null, '', neu);
     } catch (e) { /* bei file:// nicht überall erlaubt */ }
   }
@@ -584,9 +743,12 @@
   function ladeAusAdresse() {
     try {
       var p = new URLSearchParams(window.location.search);
-      return { tonart: p.get('tonart'), progression: p.get('p'), noten: p.get('noten') };
+      return {
+        tonart: p.get('tonart'), progression: p.get('p'),
+        noten: p.get('noten'), sept: p.get('sept')
+      };
     } catch (e) {
-      return { tonart: null, progression: null, noten: null };
+      return { tonart: null, progression: null, noten: null, sept: null };
     }
   }
 
@@ -656,6 +818,11 @@
   }
   elNotennamen.checked = notenStil === 'deutsch';
 
+  if (ausAdresse.sept === '1' || (!ausAdresse.sept && gemerkt && gemerkt.sept)) {
+    septAkkorde = true;
+  }
+  elSept.checked = septAkkorde;
+
   fuelleTonarten();
   fuelleVorlagen();
 
@@ -690,6 +857,11 @@
   elNotennamen.addEventListener('change', function () {
     notenStil = elNotennamen.checked ? 'deutsch' : 'international';
     beschrifteTonartenNeu();
+    zeichne();
+  });
+
+  elSept.addEventListener('change', function () {
+    septAkkorde = elSept.checked;
     zeichne();
   });
 

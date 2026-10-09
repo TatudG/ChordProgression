@@ -30,7 +30,8 @@
              aria-describedby="progression-hinweis">
       <p class="hinweis" id="progression-hinweis">
         Stufen (<code>I V vi IV</code>), Zahlen (<code>1 5 6 4</code>) oder fertige Akkorde (<code>C G Am F</code>).
-        Groß geschriebene Stufen sind Dur, klein geschriebene Moll. Mit Leerzeichen trennen.
+        Groß geschriebene Stufen sind Dur, klein geschriebene Moll. Zusätze wie <code>7</code>, <code>maj7</code>,
+        <code>ø7</code> und Slash-Akkorde (<code>C/G</code>, <code>I/VII</code>) sind erlaubt. Mit Leerzeichen trennen.
       </p>
     </div>
 
@@ -42,6 +43,11 @@
     </div>
 
     <div class="feld feld--zeile">
+      <label class="schalter" for="septakkorde">
+        <input type="checkbox" id="septakkorde">
+        <span>Septakkorde ergänzen: aus <code>I V vi IV</code> wird <code>Imaj7 V7 vi7 IVmaj7</code></span>
+      </label>
+
       <label class="schalter" for="notennamen">
         <input type="checkbox" id="notennamen">
         <span>Deutsche Notennamen: <strong>H</strong> statt B, <strong>B</strong> statt B♭</span>
@@ -56,6 +62,7 @@
     <ul class="legende__liste">
       <li><span class="punkt punkt--grundton"></span> Grundton</li>
       <li><span class="punkt punkt--ton"></span> Akkordton</li>
+      <li><span class="punkt punkt--bass"></span> Basston des Slash-Akkords</li>
       <li><span class="punkt punkt--oktave"></span> derselbe Ton eine Oktave höher</li>
     </ul>
   </section>

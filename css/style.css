@@ -13,6 +13,7 @@
   --akzent-hell: #fbe6d8;
   --ton: #2f5fbf;         /* Akkordton */
   --ton-hell: #dde6f8;
+  --bass: #1c8a5c;        /* Basston eines Slash-Akkords */
 
   --taste-weiss: #ffffff;
   --taste-linie: #c9c9c4;
@@ -34,6 +35,7 @@
     --akzent-hell: #4a2a15;
     --ton: #6c94e8;
     --ton-hell: #1e2a45;
+    --bass: #47b881;
 
     --taste-weiss: #e8e8ea;
     --taste-linie: #3a3c44;
@@ -95,7 +97,16 @@ main {
 }
 
 .feld--breit { grid-column: 1 / -1; }
-.feld--zeile { grid-column: 1 / -1; }
+
+/* Schalterzeile: beide Umschalter stehen nebeneinander, brechen aber um,
+   wenn der Platz nicht reicht. */
+.feld--zeile {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 2rem;
+}
 @media (min-width: 760px) {
   .feld--breit { grid-column: span 1; }
   .steuerung { grid-template-columns: 1fr 2fr 1fr; }
@@ -262,6 +273,8 @@ main {
 .is-grundton.taste-schwarz { fill: var(--akzent); }
 .is-akkordton.taste-weiss { fill: var(--ton); }
 .is-akkordton.taste-schwarz { fill: var(--ton); }
+.is-bass.taste-weiss { fill: var(--bass); }
+.is-bass.taste-schwarz { fill: var(--bass); }
 
 .is-obere { opacity: 0.4; }
 
@@ -315,6 +328,7 @@ main {
 }
 .punkt--grundton { background: var(--akzent); }
 .punkt--ton { background: var(--ton); }
+.punkt--bass { background: var(--bass); }
 .punkt--oktave { background: var(--ton); opacity: 0.4; }
 
 /* ---------- Fuß ---------- */
