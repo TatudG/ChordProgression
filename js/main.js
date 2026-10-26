@@ -1457,6 +1457,7 @@
 
   var elTonart = document.getElementById('tonart');
   var elProgression = document.getElementById('progression');
+  var elStufen = document.getElementById('stufen');
   var elVorlage = document.getElementById('vorlage');
   var elErgebnis = document.getElementById('ergebnis');
   var elNotennamen = document.getElementById('notennamen');
@@ -1522,6 +1523,7 @@
     schliesseBau();
     elProgression.value = folge;
     setzeVorlage(folge);        /* eine Idee ist keine Vorlage */
+    stufenFolge = stufenVon(folge, holeTonart(elTonart.value));
     zeichne();
   }
 
@@ -1561,6 +1563,8 @@
     knopf.textContent = tonartLabel(vorschlag) + ' übernehmen';
     knopf.addEventListener('click', function () {
       elTonart.value = vorschlag.id;
+      /* Die getippten Akkorde werden jetzt in der neuen Tonart gelesen */
+      stufenFolge = stufenVon(elProgression.value, vorschlag);
       schreibeFeld();
       zeichne();
     });
@@ -1596,6 +1600,31 @@
       var rohdaten = parseToken(token, ta);
       return rohdaten ? baueAkkord(rohdaten).symbol : token;
     }).join(' ');
+  }
+
+  /* Die Progression als Stufen – der feste Kern der Abfolge. Sie wird nur
+     festgelegt, wenn sich die Abfolge selbst ändert (Tippen, Vorlage, Idee,
+     Zusammenstellen). Eine andere Tonart übersetzt sie wieder in Akkorde,
+     die Stufen selbst bleiben. */
+  var stufenFolge = [];
+
+  /* Die Stufe eines Akkords, mit Basston wo nötig ("I/VII"). Liegt der Basston
+     nicht auf einer Stufe der Tonart, gibt es keine Stufenform – dann bleibt
+     der Akkord, wie er geschrieben ist. */
+  function stufeMitBass(akkord, ta) {
+    if (!akkord.stufe) { return ''; }
+    if (akkord.bassPc === null || akkord.bassPc === akkord.grundtonPc) { return akkord.stufe; }
+    var bassGrad = stufeInTonart({ grundtonPc: akkord.bassPc }, ta);
+    return bassGrad ? akkord.stufe + '/' + stufenZeichen(bassGrad, 'maj') : '';
+  }
+
+  /* Eine Abfolge in Stufen lesen – in der Tonart, die gerade gilt. Was keine
+     Stufe hat (von außen geliehen, nicht erkannt), bleibt, wie es geschrieben ist. */
+  function stufenVon(text, ta) {
+    return tokenisieren(text).map(function (token) {
+      var akkord = leseAkkord(token, ta);
+      return (akkord && stufeMitBass(akkord, ta)) || token;
+    });
   }
 
   /* Eine Absatzzeile zur Einordnung – Funktionsname fett, Erklärung dahinter */
@@ -1705,6 +1734,7 @@
     var ta = holeTonart(elTonart.value);
     var tokens = tokenisieren(quelleDerProgression());
 
+    elStufen.value = stufenFolge.join(' ');
     elErgebnis.textContent = '';
 
     /* Während zusammengestellt wird, steht die Abfolge in der Auswahl – die
@@ -1777,7 +1807,7 @@
 
     /* Gemerkt und in die Adresse kommt die Stufenfolge, nicht der Feldtext:
        eine Vorlage lässt sich so in jeder Tonart wieder herstellen. */
-    merke(ta, quelleDerProgression().trim());
+    merke(ta, stufenFolge.join(' '));
   }
 
   /* ---------------------------------------------------------------
@@ -1929,6 +1959,7 @@
      Progression. */
   function uebernimmBauListe() {
     elProgression.value = bauListe.map(bauSymbol).join(' ');
+    stufenFolge = stufenVon(elProgression.value, holeTonart(elTonart.value));
   }
 
   function bauGeaendert() {
@@ -2583,11 +2614,11 @@
   }
 
   /* Im Feld stehen die Akkorde der Tonart, nicht die Stufen – "I V vi IV"
-     wird in G♭-Dur zu "G♭ D♭ E♭m C♭". Die Vorlage im Auswahlfeld bleibt
-     dabei die Stufenfolge (siehe quelleDerProgression). */
+     wird in G♭-Dur zu "G♭ D♭ E♭m C♭". Die Stufen (stufenFolge) bleiben dabei
+     stehen, nur die Akkorde werden neu geschrieben. */
   function schreibeFeld() {
-    if (elVorlage.value) {
-      elProgression.value = akkordnamen(elVorlage.value, holeTonart(elTonart.value));
+    if (stufenFolge.length) {
+      elProgression.value = akkordnamen(stufenFolge.join(' '), holeTonart(elTonart.value));
     }
   }
 
@@ -2645,11 +2676,12 @@
   setzeVorlage(startProgression);
   fuelleBauArten();
   fuelleBauToene();
+  stufenFolge = stufenVon(startProgression, holeTonart(elTonart.value));
   schreibeFeld();
   zeigeLegende();
 
-  /* Eine andere Tonart transponiert die Vorlage mit, statt die alten
-     Akkorde stehen zu lassen. */
+  /* Eine andere Tonart transponiert die Progression mit – die Stufen bleiben,
+     die Akkorde wandern. */
   elTonart.addEventListener('change', function () {
     /* Die Tonliste richtet sich nach der Tonart: in G♭-Dur steht G♭ vorne,
        in E-Dur F♯. Die gewählten Akkorde behalten ihre Schreibweise. */
@@ -2664,12 +2696,17 @@
   elProgression.addEventListener('input', function () {
     schliesseBau();
     setzeVorlage(elProgression.value);
+    stufenFolge = stufenVon(elProgression.value, holeTonart(elTonart.value));
     zeichne();
   });
 
   elVorlage.addEventListener('change', function () {
     schliesseBau();
-    schreibeFeld();
+    /* "eigene Eingabe" lässt die Abfolge, wie sie ist */
+    if (elVorlage.value) {
+      stufenFolge = stufenVon(elVorlage.value, holeTonart(elTonart.value));
+      schreibeFeld();
+    }
     zeichne();
   });
 

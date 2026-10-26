@@ -44,11 +44,18 @@ Schreibweisen `Δ7`, `ø7`, `-`, `+`.
 Nicht erkannte Angaben erscheinen als gestrichelte Karte mit Hinweis, statt
 stillschweigend etwas Falsches zu zeigen.
 
-Hat man eine Vorlage gewählt, steht im Feld die Stufenfolge **in den Akkorden
-der Tonart**: aus `I V vi IV` wird in G♭-Dur `G♭ D♭ E♭m C♭`. Gelesen wird
-dabei weiter die Stufenfolge – deshalb wandert die Vorlage bei einem
-Tonartwechsel mit, und der Sept-Umschalter greift auch dann. Sobald man ins
-Feld tippt, gilt es als eigene Eingabe und bleibt genau so stehen, wie getippt.
+Im Eingabefeld stehen die Akkorde der Tonart: aus `I V vi IV` wird in G♭-Dur
+`G♭ D♭ E♭m C♭`. Gelesen wird dabei die Stufenfolge – deshalb wandert eine
+Vorlage bei einem Tonartwechsel mit, und der Sept-Umschalter greift auch dann.
+
+**Progression in Stufen** – das Feld darunter zeigt dieselbe Abfolge als
+römische Stufen, egal ob sie aus einer Vorlage, aus dem Tippen oder aus
+„Akkorde zusammenstellen“ stammt. Die Stufen sind der feste Kern: ändert man die
+Tonart, bleiben sie stehen, und die Akkorde wandern mit – aus `I V vi IV` wird
+in G-Dur `G D Em C`, in F-Dur `F C Dm B♭`. Getippte Akkorde werden in der gerade
+gewählten Tonart gelesen; deshalb erst die Tonart wählen, dann die Akkorde
+eingeben. Ein Akkord ohne Stufe in der Tonart (`B♭` in C-Dur) bleibt, wie er
+geschrieben ist; ein Basston auf einer Stufe bleibt als `I/VII` erhalten.
 
 **Vorlage** – 37 bekannte Progressionen in sechs Gruppen (Dur, Moll,
 Septakkorde, Jazz, Blues, Basslinie) füllen das Eingabefeld. Eigene Eingaben
